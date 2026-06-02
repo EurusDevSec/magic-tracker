@@ -18,8 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // All users go to /report first; dashboard is accessible via nav
-      router.push('/report')
+      router.push('/dashboard')
     }
   }, [user, loading, router])
 

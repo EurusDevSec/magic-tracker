@@ -30,11 +30,9 @@ export default function Home() {
               <span className="text-sm text-slate-300 hidden sm:inline">
                 Xin chào, <span className="font-semibold text-white">{profile?.full_name || user.email}</span> ({profile?.role === 'admin' ? 'Admin' : 'Thực tập sinh'})
               </span>
-              {profile?.role === 'admin' && (
-                <Link href="/dashboard" className="text-sm font-semibold text-violet-400 hover:text-violet-300 transition-colors">
-                  Bảng Tổng Quan
-                </Link>
-              )}
+              <Link href="/dashboard" className="text-sm font-semibold text-violet-400 hover:text-violet-300 transition-colors">
+                Bảng Tổng Quan
+              </Link>
               <Link href="/report" className="text-sm font-semibold text-violet-400 hover:text-violet-300 transition-colors">
                 Báo cáo tiến độ
               </Link>
@@ -75,10 +73,10 @@ export default function Home() {
           ) : user ? (
             <>
               <Link
-                href="/report"
+                href="/dashboard"
                 className="flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-lg shadow-violet-600/20"
               >
-                Vào Báo cáo tiến độ <ChevronRight className="h-5 w-5" />
+                Vào Bảng Tổng Quan <ChevronRight className="h-5 w-5" />
               </Link>
               <Link
                 href="/magic"

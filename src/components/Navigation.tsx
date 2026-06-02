@@ -13,10 +13,11 @@ export default function Navigation() {
   const { user, profile, signOut } = useAuth()
 
   const links = [
+    { href: '/dashboard', label: 'Bảng Tổng Quan', icon: BarChart2 },
     { href: '/report', label: 'Báo cáo tiến độ', icon: Calendar },
     { href: '/report/history', label: 'Lịch sử báo cáo', icon: History },
     { href: '/magic', label: '28 Ngày Biết Ơn', icon: Heart, magic: true },
-    { href: '/dashboard', label: 'Bảng Tổng Quan', icon: BarChart2 },
+    { href: '/profile', label: 'Trang cá nhân', icon: UserIcon },
   ]
 
   const activeLinkStyle = (href: string, isMagic?: boolean) => {
@@ -42,9 +43,47 @@ export default function Navigation() {
 
         {/* User Card */}
         <div className="flex items-center gap-3 p-3 bg-white/5 rounded-xl border border-white/5">
-          <div className="h-9 w-9 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 font-bold shrink-0">
-            {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
-          </div>
+          {(() => {
+            const avatarUrl = profile?.avatar_url
+            if (avatarUrl?.startsWith('preset:')) {
+              const presets: Record<string, string> = {
+                'preset:violet': 'bg-gradient-to-br from-violet-600 to-indigo-600',
+                'preset:cyan': 'bg-gradient-to-br from-cyan-500 to-blue-600',
+                'preset:emerald': 'bg-gradient-to-br from-emerald-500 to-teal-600',
+                'preset:amber': 'bg-gradient-to-br from-amber-500 to-orange-600',
+                'preset:rose': 'bg-gradient-to-br from-rose-500 to-pink-600',
+                'preset:purple': 'bg-gradient-to-br from-purple-600 to-fuchsia-600',
+              }
+              const bgClass = presets[avatarUrl] || 'bg-gradient-to-br from-violet-600 to-indigo-600'
+              return (
+                <div className={`h-9 w-9 rounded-full ${bgClass} flex items-center justify-center text-white font-bold text-sm shrink-0 border border-white/10`}>
+                  {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
+                </div>
+              )
+            }
+
+            if (avatarUrl) {
+              return (
+                <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 border border-white/10 bg-slate-900">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={avatarUrl} 
+                    alt="Avatar" 
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none'
+                    }}
+                  />
+                </div>
+              )
+            }
+
+            return (
+              <div className="h-9 w-9 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-300 font-bold shrink-0">
+                {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : <UserIcon className="h-4 w-4" />}
+              </div>
+            )
+          })()}
           <div className="overflow-hidden">
             <h4 className="text-sm font-semibold text-white truncate">{profile?.full_name || 'Thành viên'}</h4>
             <p className="text-xs text-slate-400">{profile?.role === 'admin' ? 'Quản trị viên' : 'Thực tập sinh'}</p>
