@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS public.reports (
     lessons_learned TEXT,
     problems_and_solutions TEXT,
     next_day_plan TEXT NOT NULL,
+    approval_status TEXT DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected')) NOT NULL,
+    admin_comment TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     CONSTRAINT unique_user_report_date UNIQUE (user_id, report_date)

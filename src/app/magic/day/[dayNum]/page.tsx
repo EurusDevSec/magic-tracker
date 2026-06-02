@@ -40,6 +40,55 @@ export default function MagicDayDetailPage() {
   )
   const [magicStone, setMagicStone] = useState('')
   const [extraValues, setExtraValues] = useState<Record<string, string>>({})
+  const [isQuickMode, setIsQuickMode] = useState(true)
+  const [quickText, setQuickText] = useState('')
+
+  const getInitialText = (gratitudeItems: GratitudeItem[]) => {
+    const isEmpty = gratitudeItems.every(item => !item.thing && !item.reason)
+    if (isEmpty) {
+      return Array.from({ length: 10 }, (_, i) => `${i + 1}. Tôi thực sự biết ơn ... vì ...`).join('\n')
+    }
+    return gratitudeItems.map((item, idx) => {
+      if (!item.thing && !item.reason) return `${idx + 1}. `
+      return `${idx + 1}. Tôi thực sự biết ơn ${item.thing || ''} vì ${item.reason || ''}`
+    }).join('\n')
+  }
+
+  const parseAndSetQuickText = (text: string) => {
+    setQuickText(text)
+    const lines = text.split('\n')
+    const parsedItems = Array.from({ length: 10 }, (_, i) => {
+      const line = lines[i] || ''
+      let cleanLine = line.replace(/^\d+[\.\/\-]?\s*/, '').trim()
+      let thing = cleanLine
+      let reason = ''
+      
+      const splitKeywords = [' bởi vì ', ' vì ', ' do ']
+      for (const kw of splitKeywords) {
+        const idx = cleanLine.toLowerCase().indexOf(kw)
+        if (idx !== -1) {
+          thing = cleanLine.substring(0, idx).trim()
+          thing = thing.replace(/^tôi\s+thực\s+sự\s+biết\s+ơn\s+/i, '').replace(/^tôi\s+biết\s+ơn\s+/i, '').replace(/^biết\s+ơn\s+/i, '').trim()
+          reason = cleanLine.substring(idx + kw.length).trim()
+          break
+        }
+      }
+      
+      if (!reason && thing) {
+        thing = thing.replace(/^tôi\s+thực\s+sự\s+biết\s+ơn\s+/i, '').replace(/^tôi\s+biết\s+ơn\s+/i, '').replace(/^biết\s+ơn\s+/i, '').trim()
+      }
+      
+      if (thing === '...' || thing === '___') thing = ''
+      if (reason === '...' || reason === '___') reason = ''
+      
+      return {
+        id: i + 1,
+        thing,
+        reason
+      }
+    })
+    setItems(parsedItems)
+  }
 
   // Status States
   const [checkingAccess, setCheckingAccess] = useState(true)
@@ -95,6 +144,7 @@ export default function MagicDayDetailPage() {
               return match ? match : { id: i + 1, thing: '', reason: '' }
             })
             setItems(loaded)
+            setQuickText(getInitialText(loaded))
           }
           setMagicStone(existingLog.magic_stone_thought || '')
           setExtraValues(existingLog.day_specific_practice || {})
@@ -104,12 +154,18 @@ export default function MagicDayDetailPage() {
           if (draft) {
             try {
               const parsed = JSON.parse(draft)
-              if (parsed.items) setItems(parsed.items)
+              if (parsed.items) {
+                setItems(parsed.items)
+                setQuickText(getInitialText(parsed.items))
+              }
               if (parsed.magicStone) setMagicStone(parsed.magicStone)
               if (parsed.extraValues) setExtraValues(parsed.extraValues)
+              if (parsed.isQuickMode !== undefined) setIsQuickMode(parsed.isQuickMode)
             } catch (e) {
               console.error('Error loading draft', e)
             }
+          } else {
+            setQuickText(getInitialText(items))
           }
         }
       } catch (err) {
@@ -129,10 +185,11 @@ export default function MagicDayDetailPage() {
     const draft = {
       items,
       magicStone,
-      extraValues
+      extraValues,
+      isQuickMode
     }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-  }, [items, magicStone, extraValues, checkingAccess, isEditMode, DRAFT_KEY, dayConfig])
+  }, [items, magicStone, extraValues, isQuickMode, checkingAccess, isEditMode, DRAFT_KEY, dayConfig])
 
   // Handle Input Changes
   const handleItemChange = (id: number, field: 'thing' | 'reason', val: string) => {
@@ -287,56 +344,84 @@ export default function MagicDayDetailPage() {
           
           {/* Section 1: 10 Gratitude List Items */}
           <div className="glass-card p-6 md:p-8 rounded-2xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Smile className="h-5 w-5 text-amber-400" /> 10 Điều Biết Ơn Của Bạn
                 </h3>
-                <p className="text-xs text-slate-400 mt-1">Cấu trúc: &quot;Tôi thực sự biết ơn [Ai/Cái gì] bởi vì [Lý do]...&quot;</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  {isQuickMode 
+                    ? "Mỗi điều viết trên 1 dòng. Dùng mẫu: 'Tôi thực sự biết ơn [điều] vì [lý do]'" 
+                    : "Cấu trúc: 'Tôi thực sự biết ơn [Ai/Cái gì] bởi vì [Lý do]...'"}
+                </p>
               </div>
-              <span className={`text-xs font-bold px-2.5 py-1 rounded-full border self-start ${
-                filledCount === 10 
-                  ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-              }`}>
-                Đã điền: {filledCount} / 10 điều
-              </span>
+              <div className="flex items-center gap-2 self-start sm:self-center">
+                <button
+                  type="button"
+                  onClick={() => setIsQuickMode(!isQuickMode)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
+                >
+                  {isQuickMode ? "📋 Chuyển sang Điền ô" : "📝 Chuyển sang Nhập nhanh"}
+                </button>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                  filledCount === 10 
+                    ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
+                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                }`}>
+                  Đã điền: {filledCount} / 10 điều
+                </span>
+              </div>
             </div>
 
-            {/* Inputs Grid */}
-            <div className="space-y-4">
-              {items.map((item, idx) => (
-                <div key={item.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                  {/* Thing */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">
-                      Điều {item.id}: Tôi thật sự biết ơn...
-                    </label>
-                    <input
-                      type="text"
-                      value={item.thing}
-                      onChange={(e) => handleItemChange(item.id, 'thing', e.target.value)}
-                      placeholder="ví dụ: cha mẹ của tôi, công việc hiện tại, sức khỏe của tôi..."
-                      className="glass-input block w-full rounded-lg px-3.5 py-2 text-sm placeholder-slate-600 focus:outline-none focus:ring-0 glass-input-gold"
-                    />
-                  </div>
-
-                  {/* Reason */}
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">
-                      Bởi vì...
-                    </label>
-                    <input
-                      type="text"
-                      value={item.reason}
-                      onChange={(e) => handleItemChange(item.id, 'reason', e.target.value)}
-                      placeholder="ví dụ: vì họ luôn ủng hộ tôi vô điều kiện, vì giúp tôi có thu nhập..."
-                      className="glass-input block w-full rounded-lg px-3.5 py-2 text-sm placeholder-slate-600 focus:outline-none focus:ring-0 glass-input-gold"
-                    />
-                  </div>
+            {/* Inputs Container */}
+            {isQuickMode ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center text-xs text-amber-300 bg-amber-950/20 border border-amber-500/10 p-3.5 rounded-xl">
+                  <span>💡 <b>Mẹo nhập nhanh:</b> Bạn có thể viết tự do hoặc chỉnh sửa mẫu dưới đây. Ghi rõ <b>điều biết ơn</b> và <b>lý do (từ khóa &quot;vì&quot; hoặc &quot;bởi vì&quot;)</b> trên từng dòng để hệ thống tự động bóc tách.</span>
                 </div>
-              ))}
-            </div>
+                <textarea
+                  value={quickText}
+                  onChange={(e) => parseAndSetQuickText(e.target.value)}
+                  placeholder="1. Tôi thực sự biết ơn ... vì ...&#13;2. Tôi thực sự biết ơn ... vì ..."
+                  rows={11}
+                  className="glass-input block w-full rounded-xl p-4 text-sm font-mono leading-relaxed focus:outline-none focus:ring-0 glass-input-gold whitespace-pre-wrap"
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {items.map((item, idx) => (
+                  <div key={item.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                    {/* Thing */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                        Điều {item.id}: Tôi thật sự biết ơn...
+                      </label>
+                      <input
+                        type="text"
+                        value={item.thing}
+                        onChange={(e) => handleItemChange(item.id, 'thing', e.target.value)}
+                        placeholder="ví dụ: cha mẹ của tôi, công việc hiện tại, sức khỏe của tôi..."
+                        className="glass-input block w-full rounded-lg px-3.5 py-2 text-sm placeholder-slate-600 focus:outline-none focus:ring-0 glass-input-gold"
+                      />
+                    </div>
+
+                    {/* Reason */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1">
+                        Bởi vì...
+                      </label>
+                      <input
+                        type="text"
+                        value={item.reason}
+                        onChange={(e) => handleItemChange(item.id, 'reason', e.target.value)}
+                        placeholder="ví dụ: vì họ luôn ủng hộ tôi vô điều kiện, vì giúp tôi có thu nhập..."
+                        className="glass-input block w-full rounded-lg px-3.5 py-2 text-sm placeholder-slate-600 focus:outline-none focus:ring-0 glass-input-gold"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Section 2: Day specific practice inputs (if configured) */}
