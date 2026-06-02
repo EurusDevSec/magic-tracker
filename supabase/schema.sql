@@ -82,9 +82,9 @@ CREATE POLICY "Allow users to update their own profiles"
     USING (auth.uid() = id);
 
 -- Reports Policies
-CREATE POLICY "Allow users to view their own reports" 
+CREATE POLICY "Allow authenticated users to view all reports" 
     ON public.reports FOR SELECT 
-    USING (auth.uid() = user_id OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+    USING (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Allow users to insert their own reports" 
     ON public.reports FOR INSERT 
