@@ -63,12 +63,12 @@ export default function DashboardPage() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
-  // Generate dates: oldest first (today on right)
+  // Generate dates: starting today, going forward into the future
   useEffect(() => {
     const list: string[] = []
-    for (let i = dateRangeSize - 1; i >= 0; i--) {
+    for (let i = 0; i < dateRangeSize; i++) {
       const d = new Date()
-      d.setDate(d.getDate() - i)
+      d.setDate(d.getDate() + i)
       list.push(d.toLocaleDateString('en-CA'))
     }
     setDatesList(list)
@@ -311,7 +311,7 @@ export default function DashboardPage() {
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-violet-400" /> Bảng Theo Dõi Chi Tiết
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Click ô xanh để xem nội dung. Cột phải = hôm nay.</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Click ô xanh để xem nội dung. Mũi tên ▼ chỉ ngày hôm nay.</p>
                   </div>
                   <div className="flex items-center gap-2 no-print">
                     {[7, 14, 30].map((size) => (
@@ -382,7 +382,7 @@ export default function DashboardPage() {
                 <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500 pt-2 border-t border-white/5">
                   <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Đã nộp (click xem)</span>
                   <span className="flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-rose-400/50" /> Chưa nộp</span>
-                  <span className="flex items-center gap-1.5"><Info className="h-3.5 w-3.5" /> Cột phải = Hôm nay</span>
+                  <span className="flex items-center gap-1.5"><Info className="h-3.5 w-3.5" /> Mũi tên ▼ chỉ ngày hôm nay</span>
                 </div>
               </div>
 
