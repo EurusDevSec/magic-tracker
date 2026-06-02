@@ -3,7 +3,7 @@ import { createBrowserClient } from '@supabase/ssr'
 let browserClient: ReturnType<typeof createBrowserClient> | null = null
 
 export const createClient = () => {
-  // If we are on the server side, always create a fresh client for safety (prevents data leaking)
+  // If we are on the server side, always create a fresh client for safety (prevents data leaking between requests)
   if (typeof window === 'undefined') {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -14,7 +14,6 @@ export const createClient = () => {
   if (!browserClient) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    console.log("[createClient] Initializing singleton browser client with URL:", url);
     browserClient = createBrowserClient(url!, key!)
   }
 

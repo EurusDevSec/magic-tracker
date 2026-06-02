@@ -38,7 +38,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
 
   const fetchProfile = async (userId: string) => {
-    console.log("[AuthContext] fetchProfile started for userId:", userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -46,7 +45,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .eq('id', userId)
         .single()
       if (error) throw error
-      console.log("[AuthContext] fetchProfile success:", data);
       setProfile(data as Profile)
     } catch (err) {
       console.error('[AuthContext] Error fetching profile:', err)
@@ -62,18 +60,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const getInitialSession = async () => {
-      console.log("[AuthContext] getInitialSession started");
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        console.log("[AuthContext] getInitialSession fetched, session exists:", !!session);
         if (session) {
           setUser(session.user)
-          await fetchProfile(session.user.id)
+          // Don't await here - let it load in background
+          // onAuthStateChange will handle profile fetch
+          fetchProfile(session.user.id)
         }
       } catch (err) {
         console.error('[AuthContext] Error getting initial session:', err)
       } finally {
-        console.log("[AuthContext] getInitialSession finally setting loading to false");
+        // Set loading to false immediately after we know the session status
+        // Don't wait for fetchProfile to finish - profile can load after
         setLoading(false)
       }
     }
@@ -81,17 +80,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getInitialSession()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        console.log("[AuthContext] onAuthStateChange event:", event, "session exists:", !!session);
+      (event: any, session: any) => {
         if (session) {
           setUser(session.user)
-          await fetchProfile(session.user.id)
+          // Don't await - fire and forget, profile loads in background
+          fetchProfile(session.user.id)
         } else {
           setUser(null)
           setProfile(null)
+          setLoading(false)
         }
-        console.log("[AuthContext] onAuthStateChange setting loading to false");
-        setLoading(false)
       }
     )
 
