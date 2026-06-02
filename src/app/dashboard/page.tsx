@@ -63,10 +63,10 @@ export default function DashboardPage() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
-  // Generate dates: newest first (today on left)
+  // Generate dates: oldest first (today on right)
   useEffect(() => {
     const list: string[] = []
-    for (let i = 0; i < dateRangeSize; i++) {
+    for (let i = dateRangeSize - 1; i >= 0; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
       list.push(d.toLocaleDateString('en-CA'))
@@ -81,8 +81,8 @@ export default function DashboardPage() {
       const [profilesRes, reportsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('reports').select('*')
-          .gte('report_date', datesList[datesList.length - 1])
-          .lte('report_date', datesList[0])
+          .gte('report_date', datesList[0])
+          .lte('report_date', datesList[datesList.length - 1])
       ])
       setMembers(profilesRes.data || [])
       setReports(reportsRes.data || [])
@@ -104,7 +104,7 @@ export default function DashboardPage() {
   const todayRate = totalMembers > 0 ? Math.round((submittedToday / totalMembers) * 100) : 0
 
   // Bar chart: daily submission count
-  const dailyBarData = [...datesList].reverse().map(dateStr => {
+  const dailyBarData = datesList.map(dateStr => {
     const d = new Date(dateStr + 'T00:00:00')
     return {
       label: d.toLocaleDateString('vi-VN', { month: '2-digit', day: '2-digit' }),
@@ -134,10 +134,9 @@ export default function DashboardPage() {
 
   // Export CSV
   const exportCSV = () => {
-    const sortedDates = [...datesList].reverse()
-    const headers = ['Thành viên', 'Email', ...sortedDates]
+    const headers = ['Thành viên', 'Email', ...datesList]
     const rows = members.map(m => {
-      const cells = sortedDates.map(d => findReport(m.id, d) ? 'Đã nộp' : 'Chưa nộp')
+      const cells = datesList.map(d => findReport(m.id, d) ? 'Đã nộp' : 'Chưa nộp')
       return [m.full_name, m.email, ...cells]
     })
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
@@ -312,7 +311,7 @@ export default function DashboardPage() {
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-violet-400" /> Bảng Theo Dõi Chi Tiết
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Click ô xanh để xem nội dung. Cột trái = hôm nay.</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Click ô xanh để xem nội dung. Cột phải = hôm nay.</p>
                   </div>
                   <div className="flex items-center gap-2 no-print">
                     {[7, 14, 30].map((size) => (
@@ -383,7 +382,7 @@ export default function DashboardPage() {
                 <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500 pt-2 border-t border-white/5">
                   <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Đã nộp (click xem)</span>
                   <span className="flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-rose-400/50" /> Chưa nộp</span>
-                  <span className="flex items-center gap-1.5"><Info className="h-3.5 w-3.5" /> Cột trái = Hôm nay</span>
+                  <span className="flex items-center gap-1.5"><Info className="h-3.5 w-3.5" /> Cột phải = Hôm nay</span>
                 </div>
               </div>
 
