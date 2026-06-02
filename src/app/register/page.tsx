@@ -62,7 +62,11 @@ export default function RegisterPage() {
         setPassword('')
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Đã xảy ra lỗi trong quá trình đăng ký!')
+      let msg = err.message || 'Đã xảy ra lỗi trong quá trình đăng ký!'
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('limit exceeded') || msg.toLowerCase().includes('too many requests')) {
+        msg = 'Giới hạn đăng ký bằng Email hiện tại đã hết lượt (Rate Limit). Vui lòng liên hệ Admin để thêm tài khoản thủ công trực tiếp từ Supabase Dashboard, hoặc thử lại sau.'
+      }
+      setErrorMsg(msg)
       setLoadingAction(false)
     }
   }
