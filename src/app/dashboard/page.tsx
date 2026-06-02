@@ -250,7 +250,7 @@ export default function DashboardPage() {
                       <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} domain={[0, totalMembers || 1]} />
                       <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
                         labelStyle={{ color: '#c4b5fd' }} itemStyle={{ color: '#a78bfa' }}
-                        formatter={(v) => [`${v ?? 0} báo cáo`, '']} />
+                        formatter={((v: unknown) => [`${v ?? 0} báo cáo`, '']) as any} />
                       <Bar dataKey="count" fill="#8b5cf6" radius={[6, 6, 0, 0]}>
                         <LabelList dataKey="count" position="top" style={{ fill: '#c4b5fd', fontSize: 11, fontWeight: 700 }} />
                       </Bar>
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                     </Bar>
                     <Bar dataKey="missing" name="Còn thiếu" stackId="a" fill="#1e293b" radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="missing" position="center" style={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                        formatter={(v) => (Number(v) > 0 ? v : '')} />
+                        formatter={((v: unknown) => (Number(v) > 0 ? v : '')) as any} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
