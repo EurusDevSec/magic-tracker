@@ -14,7 +14,8 @@ import {
   Calendar, 
   ListTodo,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react'
 
 const DRAFT_KEY = 'eti-report-draft'
@@ -35,6 +36,14 @@ export default function ReportForm() {
   const [submitting, setSubmitting] = useState(false)
   const [existingReportId, setExistingReportId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [isPastDeadline, setIsPastDeadline] = useState(false)
+
+  useEffect(() => {
+    const now = new Date()
+    if (now.getHours() >= 17) {
+      setIsPastDeadline(true)
+    }
+  }, [])
 
   // 1. Fetch today's report on mount to check if user already submitted
   useEffect(() => {
@@ -199,6 +208,25 @@ export default function ReportForm() {
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold">Bạn đã nộp báo cáo hôm nay.</span> Việc nộp lại form này sẽ ghi đè báo cáo cũ của ngày hôm nay ({new Date().toLocaleDateString('vi-VN')}).
+          </div>
+        </div>
+      )}
+
+      {/* Deadline Warning banner */}
+      {!existingReportId && isPastDeadline && (
+        <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-4 text-sm text-rose-300 flex items-start gap-3">
+          <Clock className="h-5 w-5 shrink-0 mt-0.5 text-rose-400" />
+          <div>
+            <span className="font-bold text-rose-400">Đã quá hạn nộp hằng ngày (17h00)!</span> Báo cáo của bạn sẽ được đánh dấu là <span className="font-bold text-rose-400 underline">Nộp muộn</span>. Vui lòng hoàn thành và nộp sớm nhất có thể.
+          </div>
+        </div>
+      )}
+
+      {!existingReportId && !isPastDeadline && (
+        <div className="rounded-xl bg-violet-500/10 border border-violet-500/25 p-4 text-sm text-violet-300 flex items-start gap-3">
+          <Clock className="h-5 w-5 shrink-0 mt-0.5 text-violet-400" />
+          <div>
+            <span className="font-bold text-violet-400">Hạn nộp hằng ngày:</span> Trước <span className="font-bold text-white">17h00</span>. Hãy hoàn thành báo cáo đúng hạn để đảm bảo ghi nhận chuyên cần nhé!
           </div>
         </div>
       )}

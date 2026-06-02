@@ -15,7 +15,8 @@ import {
   ArrowRight, 
   Loader2,
   FileText,
-  Plus
+  Plus,
+  Clock
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -36,6 +37,14 @@ export default function ReportHistoryPage() {
   const [reports, setReports] = useState<Report[]>([])
   const [fetching, setFetching] = useState(true)
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
+
+  const isReportLate = (utcStr: string) => {
+    if (!utcStr) return false
+    const date = new Date(utcStr)
+    const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    const vnTime = new Date(utcTime + (3600000 * 7)) // Vietnam is UTC+7
+    return vnTime.getHours() >= 17
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -167,9 +176,24 @@ export default function ReportHistoryPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          Đã lưu lúc: {new Date(report.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                          <p className="text-xs text-slate-400">
+                            Đã lưu lúc: {new Date(report.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                            isReportLate(report.created_at)
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          }`}>
+                            {isReportLate(report.created_at) ? (
+                              <>
+                                <Clock className="h-2.5 w-2.5" /> Nộp muộn
+                              </>
+                            ) : (
+                              'Đúng hạn'
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     

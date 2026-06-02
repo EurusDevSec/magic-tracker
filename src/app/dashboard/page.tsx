@@ -11,7 +11,7 @@ import {
 } from 'recharts'
 import {
   Users, CheckCircle, XCircle, TrendingUp, FileText,
-  Loader2, Calendar, Info, Download, Printer
+  Loader2, Calendar, Info, Download, Printer, Clock
 } from 'lucide-react'
 
 type Profile = { id: string; email: string; full_name: string; avatar_url: string | null; role: string }
@@ -19,6 +19,7 @@ type Report = {
   id: string; user_id: string; report_date: string
   today_tasks: string; lessons_learned: string | null
   problems_and_solutions: string | null; next_day_plan: string
+  created_at: string
 }
 
 const MEMBER_COLORS = [
@@ -58,6 +59,22 @@ export default function DashboardPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [selectedMemberName, setSelectedMemberName] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const isReportLate = (report: any) => {
+    if (!report?.created_at) return false
+    const date = new Date(report.created_at)
+    const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    const vnTime = new Date(utcTime + (3600000 * 7)) // Vietnam is UTC+7
+    return vnTime.getHours() >= 17
+  }
+
+  const formatSubmissionTime = (utcStr: string) => {
+    if (!utcStr) return ''
+    const date = new Date(utcStr)
+    const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
+    const vnTime = new Date(utcTime + (3600000 * 7))
+    return vnTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+  }
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -357,13 +374,18 @@ export default function DashboardPage() {
                             </td>
                             {datesList.map((dateStr) => {
                               const report = findReport(member.id, dateStr)
+                              const late = isReportLate(report)
                               return (
                                 <td key={dateStr} className={`py-2 px-2 text-center ${isToday(dateStr) ? 'bg-violet-500/5' : ''}`}>
                                   {report ? (
                                     <button onClick={() => { setSelectedReport(report); setSelectedMemberName(member.full_name); setIsModalOpen(true) }}
-                                      className="no-print mx-auto flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer"
-                                      title={`Xem báo cáo của ${member.full_name}`}>
-                                      <CheckCircle className="h-3.5 w-3.5" />
+                                      className={`no-print mx-auto flex h-6 w-6 items-center justify-center rounded-md border transition-all cursor-pointer ${
+                                        late 
+                                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20' 
+                                          : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                                      }`}
+                                      title={late ? `Nộp muộn của ${member.full_name} (${formatSubmissionTime(report.created_at)})` : `Đúng hạn của ${member.full_name} (${formatSubmissionTime(report.created_at)})`}>
+                                      {late ? <Clock className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />}
                                     </button>
                                   ) : (
                                     <div className="mx-auto flex h-6 w-6 items-center justify-center rounded-md bg-rose-500/5 border border-rose-500/10 text-rose-400/50">
@@ -380,7 +402,8 @@ export default function DashboardPage() {
                   </table>
                 </div>
                 <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500 pt-2 border-t border-white/5">
-                  <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Đã nộp (click xem)</span>
+                  <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-emerald-400" /> Đúng hạn (click xem)</span>
+                  <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-amber-400" /> Nộp muộn (click xem)</span>
                   <span className="flex items-center gap-1.5"><XCircle className="h-3.5 w-3.5 text-rose-400/50" /> Chưa nộp</span>
                   <span className="flex items-center gap-1.5"><Info className="h-3.5 w-3.5" /> Mũi tên ▼ chỉ ngày hôm nay</span>
                 </div>
@@ -428,7 +451,18 @@ export default function DashboardPage() {
               onClick={e => e.stopPropagation()}>
               <div className="p-5 border-b border-white/5 flex justify-between items-center bg-slate-900/40">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Báo cáo tiến độ</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Báo cáo tiến độ</span>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${
+                      isReportLate(selectedReport) 
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' 
+                        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    }`}>
+                      {isReportLate(selectedReport) 
+                        ? `Nộp muộn (${formatSubmissionTime(selectedReport.created_at)})` 
+                        : `Đúng hạn (${formatSubmissionTime(selectedReport.created_at)})`}
+                    </span>
+                  </div>
                   <h3 className="text-lg font-extrabold text-white mt-0.5">{selectedMemberName}</h3>
                   <p className="text-xs text-slate-400 mt-0.5">
                     {new Date(selectedReport.report_date + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
