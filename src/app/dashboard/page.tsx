@@ -20,6 +20,7 @@ type Report = {
   today_tasks: string; lessons_learned: string | null
   problems_and_solutions: string | null; next_day_plan: string
   created_at: string
+  updated_at: string
 }
 
 const MEMBER_COLORS = [
@@ -95,6 +96,7 @@ export default function DashboardPage() {
   const [selectedMemberName, setSelectedMemberName] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedFeedDate, setSelectedFeedDate] = useState('')
+  
 
   const isReportLate = (report: any) => {
     if (!report?.created_at) return false
@@ -111,6 +113,8 @@ export default function DashboardPage() {
     const vnTime = new Date(utcTime + (3600000 * 7))
     return vnTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
   }
+
+
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -437,7 +441,7 @@ export default function DashboardPage() {
                     const report = findReport(member.id, selectedFeedDate)
                     const late = report ? isReportLate(report) : false
                     const memberColor = MEMBER_COLORS[mIdx % MEMBER_COLORS.length]
-                    
+
                     return (
                       <div 
                         key={member.id} 
@@ -497,6 +501,8 @@ export default function DashboardPage() {
                                 </h4>
                                 <p className="text-xs text-violet-200 font-medium leading-relaxed whitespace-pre-wrap">{report.next_day_plan}</p>
                               </div>
+
+
                             </div>
                           ) : (
                             <div className="flex flex-col items-center justify-center py-6 text-center">
