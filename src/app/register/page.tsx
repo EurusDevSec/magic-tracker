@@ -20,13 +20,9 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      if (profile?.role === 'admin') {
-        router.push('/dashboard')
-      } else {
-        router.push('/report')
-      }
+      router.push('/report')
     }
-  }, [user, profile, loading, router])
+  }, [user, loading, router])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()

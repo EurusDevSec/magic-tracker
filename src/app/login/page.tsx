@@ -18,13 +18,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      if (profile?.role === 'admin') {
-        router.push('/dashboard')
-      } else {
-        router.push('/report')
-      }
+      // All users go to /report first; dashboard is accessible via nav
+      router.push('/report')
     }
-  }, [user, profile, loading, router])
+  }, [user, loading, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

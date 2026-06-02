@@ -19,7 +19,7 @@ export default function Home() {
           <div className="h-9 w-9 rounded-lg bg-violet-600/20 text-violet-400 flex items-center justify-center border border-violet-500/30">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="font-extrabold text-xl tracking-tight text-white">Eurus <span className="text-violet-400">Hub</span></span>
+          <span className="font-extrabold text-xl tracking-tight text-white">ETI <span className="text-violet-400">Tracker</span></span>
         </div>
 
         <nav className="flex items-center gap-4">
@@ -28,11 +28,11 @@ export default function Home() {
           ) : user ? (
             <div className="flex items-center gap-4">
               <span className="text-sm text-slate-300 hidden sm:inline">
-                Xin chào, <span className="font-semibold text-white">{profile?.full_name || user.email}</span> ({profile?.role === 'admin' ? 'Admin' : 'Thành viên'})
+                Xin chào, <span className="font-semibold text-white">{profile?.full_name || user.email}</span> ({profile?.role === 'admin' ? 'Admin' : 'Thực tập sinh'})
               </span>
               {profile?.role === 'admin' && (
                 <Link href="/dashboard" className="text-sm font-semibold text-violet-400 hover:text-violet-300 transition-colors">
-                  Dashboard Admin
+                  Bảng Tổng Quan
                 </Link>
               )}
               <Link href="/report" className="text-sm font-semibold text-violet-400 hover:text-violet-300 transition-colors">
@@ -65,7 +65,7 @@ export default function Home() {
           <span className="text-gold-gradient animate-glow">28 Ngày Biết Ơn</span>
         </h1>
         <p className="mt-6 text-lg text-slate-400 max-w-2xl">
-          Nơi các thành viên team Eurus nộp báo cáo công việc hàng ngày, học tập những kiến thức mới, giải quyết khó khăn và rèn luyện lòng biết ơn để thu hút phép màu cuộc sống.
+          Nền tảng theo dõi báo cáo tiến độ thực tập tại <span className="text-violet-400 font-bold">ETI</span> và hành trình 28 ngày biết ơn truyền cảm hứng.
         </p>
 
         {/* Call to Actions */}
@@ -148,8 +148,8 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full text-center py-8 text-xs text-slate-500 border-t border-white/5 z-10">
-        © 2026 Eurus Team. Thiết kế với 💜 sử dụng Next.js, Tailwind CSS & Supabase.
+      <footer className="w-full text-center py-6 text-xs text-slate-500 border-t border-white/5 z-10">
+        © 2026 ETI (Eurus Technology & Innovation). Bảo lưu mọi quyền.
       </footer>
     </div>
   )

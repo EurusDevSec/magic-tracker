@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Eurus Intern Dashboard | Progress & Gratitude",
-  description: "Daily work progress tracking & 28 Days of Gratitude Challenge based on The Magic book.",
+  title: "ETI Tracker | Báo cáo tiến độ thực tập",
+  description: "Hệ thống theo dõi tiến độ báo cáo hàng ngày và hành trình biết ơn của các thực tập sinh ETI.",
 };
 
 export default function RootLayout({

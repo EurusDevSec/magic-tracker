@@ -119,7 +119,7 @@ export default function ReportHistoryPage() {
             <FileText className="h-16 w-16 text-slate-600 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">Chưa có báo cáo nào</h3>
             <p className="text-slate-400 text-sm max-w-sm mb-6">
-              Bạn chưa nộp bất kỳ báo cáo tiến độ nào trên hệ thống Eurus Hub.
+            Bạn chưa nộp bất kỳ báo cáo tiến độ nào trên hệ thống <span className="text-violet-400 font-semibold">ETI Tracker</span>.
             </p>
             <Link
               href="/report"

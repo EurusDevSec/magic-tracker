@@ -17,7 +17,7 @@ import {
   Loader2
 } from 'lucide-react'
 
-const DRAFT_KEY = 'eurus-report-draft'
+const DRAFT_KEY = 'eti-report-draft'
 
 export default function ReportForm() {
   const { user } = useAuth()

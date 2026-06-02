@@ -47,7 +47,7 @@ export default function MagicDayDetailPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
 
-  const DRAFT_KEY = `eurus-magic-draft-day-${dayNum}`
+  const DRAFT_KEY = `eti-magic-draft-day-${dayNum}`
 
   // Check authentication
   useEffect(() => {
