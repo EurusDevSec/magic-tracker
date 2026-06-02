@@ -28,17 +28,52 @@ const MEMBER_COLORS = [
 ]
 const PIE_COLORS = ['#8b5cf6', '#1e293b']
 
+// Custom tooltip for daily bar chart
+const CustomDailyTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-950/90 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-3 shadow-2xl text-xs">
+        <p className="font-bold text-slate-300 mb-1">{label}</p>
+        <p className="text-violet-400 font-medium flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-violet-400" />
+          Báo cáo đã nộp: <span className="font-extrabold text-white">{payload[0].value} / {payload[0].payload.total}</span>
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
+// Custom tooltip for pie chart
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    return (
+      <div className="bg-slate-950/90 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-3 shadow-2xl text-xs">
+        <p className="font-bold flex items-center gap-1.5" style={{ color: data.payload.color || data.color }}>
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: data.payload.color || data.color }} />
+          {data.name}: <span className="font-extrabold text-white">{data.value} người</span>
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
 // Custom tooltip for member bar chart
 const MemberBarTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 shadow-xl text-xs">
-        <p className="font-bold text-white mb-1">{label}</p>
-        {payload.map((p: any) => (
-          <p key={p.dataKey} style={{ color: p.fill }}>
-            {p.name}: <span className="font-bold text-white">{p.value} ngày</span>
-          </p>
-        ))}
+      <div className="bg-slate-950/90 backdrop-blur-md border border-white/10 rounded-2xl px-4 py-3 shadow-2xl text-xs">
+        <p className="font-bold text-white mb-2 pb-1 border-b border-white/5">{label}</p>
+        <div className="space-y-1">
+          {payload.map((p: any) => (
+            <p key={p.dataKey} className="flex items-center gap-2" style={{ color: p.color || p.fill }}>
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color || p.fill }} />
+              {p.name}: <span className="font-extrabold text-white">{p.value} ngày</span>
+            </p>
+          ))}
+        </div>
       </div>
     )
   }
@@ -269,13 +304,17 @@ export default function DashboardPage() {
                   <h3 className="text-sm font-bold text-white mb-4">📈 Số báo cáo nộp theo ngày</h3>
                   <ResponsiveContainer width="100%" height={190}>
                     <BarChart data={dailyBarData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                      <defs>
+                        <linearGradient id="dailyBarGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#a78bfa" />
+                          <stop offset="100%" stopColor="#6366f1" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="0 0" stroke="rgba(255,255,255,0.02)" vertical={false} />
                       <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                       <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} domain={[0, totalMembers || 1]} />
-                      <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-                        labelStyle={{ color: '#c4b5fd' }} itemStyle={{ color: '#a78bfa' }}
-                        formatter={((v: unknown) => [`${v ?? 0} báo cáo`, '']) as any} />
-                      <Bar dataKey="count" fill="#8b5cf6" radius={[6, 6, 0, 0]}>
+                      <Tooltip content={<CustomDailyTooltip />} cursor={{ fill: 'rgba(255,255,255,0.01)' }} />
+                      <Bar dataKey="count" fill="url(#dailyBarGrad)" radius={[6, 6, 0, 0]}>
                         <LabelList dataKey="count" position="top" style={{ fill: '#c4b5fd', fontSize: 11, fontWeight: 700 }} />
                       </Bar>
                     </BarChart>
@@ -283,25 +322,52 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Today pie */}
-                <div className="glass-card p-6 rounded-2xl flex flex-col">
+                <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
                   <h3 className="text-sm font-bold text-white mb-2">🍩 Hôm nay ({new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})</h3>
-                  <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="flex-1 flex flex-col items-center justify-center relative">
+                    {/* Centered Donut Label */}
+                    <div className="absolute flex flex-col items-center justify-center">
+                      <span className="text-3xl font-black text-white tracking-tighter leading-none">{todayRate}%</span>
+                      <span className="text-[10px] text-slate-500 uppercase font-bold mt-1.5 tracking-wider">Tỷ lệ</span>
+                    </div>
+
                     <ResponsiveContainer width="100%" height={150}>
                       <PieChart>
-                        <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={42} outerRadius={65} strokeWidth={0}>
-                          {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                        <defs>
+                          <linearGradient id="pieActiveGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#06b6d4" />
+                            <stop offset="100%" stopColor="#8b5cf6" />
+                          </linearGradient>
+                          <linearGradient id="pieInactiveGrad" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#1e293b" />
+                            <stop offset="100%" stopColor="#0f172a" />
+                          </linearGradient>
+                        </defs>
+                        <Pie 
+                          data={pieData} 
+                          dataKey="value" 
+                          cx="50%" 
+                          cy="50%" 
+                          innerRadius={48} 
+                          outerRadius={65} 
+                          strokeWidth={0}
+                          cornerRadius={6}
+                        >
+                          <Cell key="cell-0" fill="url(#pieActiveGrad)" />
+                          <Cell key="cell-1" fill="url(#pieInactiveGrad)" />
                         </Pie>
-                        <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-                          itemStyle={{ color: '#c4b5fd' }} />
+                        <Tooltip content={<CustomPieTooltip />} />
                       </PieChart>
                     </ResponsiveContainer>
-                    <div className="flex gap-4 mt-1">
-                      {pieData.map((d, i) => (
-                        <div key={i} className="flex items-center gap-1.5 text-xs text-slate-300">
-                          <div className="h-2.5 w-2.5 rounded-full" style={{ background: PIE_COLORS[i] }} />
-                          {d.name}: <span className="font-bold text-white">{d.value}</span>
-                        </div>
-                      ))}
+                  </div>
+                  <div className="flex gap-4 mt-2 justify-center border-t border-white/5 pt-2">
+                    <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                      <div className="h-2.5 w-2.5 rounded-full" style={{ background: 'linear-gradient(45deg, #06b6d4, #8b5cf6)' }} />
+                      Đã nộp: <span className="font-bold text-white">{submittedToday}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                      <div className="h-2.5 w-2.5 rounded-full bg-[#1e293b]" />
+                      Chưa nộp: <span className="font-bold text-white">{Math.max(0, totalMembers - submittedToday)}</span>
                     </div>
                   </div>
                 </div>
@@ -310,18 +376,28 @@ export default function DashboardPage() {
               {/* Per-Member Stacked Bar Chart */}
               <div className="glass-card p-6 rounded-2xl">
                 <h3 className="text-sm font-bold text-white mb-1">👤 Tiến độ nộp theo từng người ({dateRangeSize} ngày)</h3>
-                <p className="text-xs text-slate-500 mb-5">Cột xanh = Đã nộp, Cột đỏ = Còn thiếu</p>
+                <p className="text-xs text-slate-500 mb-5">Cột xanh = Đã nộp, Cột tối = Còn thiếu</p>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={memberChartData} margin={{ top: 4, right: 8, left: -20, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <defs>
+                      <linearGradient id="memberSubmittedGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#a78bfa" />
+                        <stop offset="100%" stopColor="#7c3aed" />
+                      </linearGradient>
+                      <linearGradient id="memberMissingGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#1e293b" />
+                        <stop offset="100%" stopColor="#0f172a" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="0 0" stroke="rgba(255,255,255,0.02)" vertical={false} />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} angle={-20} textAnchor="end" interval={0} />
                     <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} domain={[0, dateRangeSize]} />
-                    <Tooltip content={<MemberBarTooltip />} />
+                    <Tooltip content={<MemberBarTooltip />} cursor={{ fill: 'rgba(255,255,255,0.01)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#94a3b8', paddingTop: 12 }} />
-                    <Bar dataKey="submitted" name="Đã nộp" stackId="a" fill="#8b5cf6" radius={[0, 0, 0, 0]}>
+                    <Bar dataKey="submitted" name="Đã nộp" stackId="a" fill="url(#memberSubmittedGrad)">
                       <LabelList dataKey="submitted" position="center" style={{ fill: '#fff', fontSize: 10, fontWeight: 700 }} />
                     </Bar>
-                    <Bar dataKey="missing" name="Còn thiếu" stackId="a" fill="#1e293b" radius={[4, 4, 0, 0]}>
+                    <Bar dataKey="missing" name="Còn thiếu" stackId="a" fill="url(#memberMissingGrad)" radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="missing" position="center" style={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
                         formatter={((v: unknown) => (Number(v) > 0 ? v : '')) as any} />
                     </Bar>
