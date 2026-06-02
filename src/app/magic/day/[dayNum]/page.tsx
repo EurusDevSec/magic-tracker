@@ -70,7 +70,7 @@ export default function MagicDayDetailPage() {
 
         if (logErr) throw logErr
 
-        const completedDays = logs?.map(l => l.day_number) || []
+        const completedDays = logs?.map((l: { day_number: number }) => l.day_number) || []
         
         // Lock rules: must complete all prior days
         // (e.g. to do Day 3, they must have completed Day 1 and 2, which means length >= 2)
@@ -84,7 +84,7 @@ export default function MagicDayDetailPage() {
         }
 
         // 2. Load existing data if they've completed it
-        const existingLog = logs?.find(l => l.day_number === dayNum)
+        const existingLog = logs?.find((l: { day_number: number }) => l.day_number === dayNum)
         if (existingLog) {
           setIsEditMode(true)
           if (existingLog.gratitude_list && Array.isArray(existingLog.gratitude_list)) {

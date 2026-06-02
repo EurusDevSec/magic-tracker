@@ -126,7 +126,7 @@ export default function AdminDashboardPage() {
         
         // Count completions manually
         const counts: Record<string, number> = {}
-        logsData?.forEach(log => {
+        logsData?.forEach((log: { user_id: string }) => {
           counts[log.user_id] = (counts[log.user_id] || 0) + 1
         })
         

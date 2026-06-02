@@ -39,7 +39,7 @@ export default function MagicGratitudePage() {
 
         if (error) throw error
         
-        const days = data?.map(log => log.day_number) || []
+        const days = data?.map((log: { day_number: number }) => log.day_number) || []
         setCompletedDays(days)
       } catch (err) {
         console.error('Error fetching gratitude logs:', err)
