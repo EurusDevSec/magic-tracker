@@ -40,7 +40,7 @@ export default function MagicDayDetailPage() {
   )
   const [magicStone, setMagicStone] = useState('')
   const [extraValues, setExtraValues] = useState<Record<string, string>>({})
-  const [isQuickMode, setIsQuickMode] = useState(true)
+  const [isQuickMode, setIsQuickMode] = useState(false) // Default to Notebook Mode (Điền khuyết)
   const [quickText, setQuickText] = useState('')
 
   const getInitialText = (gratitudeItems: GratitudeItem[]) => {
@@ -63,7 +63,7 @@ export default function MagicDayDetailPage() {
       let thing = cleanLine
       let reason = ''
       
-      const splitKeywords = [' bởi vì ', ' vì ', ' do ']
+      const splitKeywords = [' bởi vì ', ' vì ', ' do ', ' - ', ' : ', ' – ']
       for (const kw of splitKeywords) {
         const idx = cleanLine.toLowerCase().indexOf(kw)
         if (idx !== -1) {
@@ -201,16 +201,16 @@ export default function MagicDayDetailPage() {
   }
 
   // Count filled gratitude items
-  const filledCount = items.filter(item => item.thing.trim() !== '' && item.reason.trim() !== '').length
+  const filledCount = items.filter(item => item.thing.trim() !== '').length
 
   // Submit Logic
   const handleSubmit = async () => {
     if (!user || !dayConfig) return
 
     // Validate gratitude entries (must be exactly 10!)
-    const invalidItems = items.some(item => !item.thing.trim() || !item.reason.trim())
-    if (invalidItems) {
-      setMessage({ type: 'error', text: 'Hãy điền đầy đủ cả 10 điều biết ơn (Lòng biết ơn & Lý do) để hoàn thành bài tập.' })
+    const hasEmptyThing = items.some(item => !item.thing.trim())
+    if (hasEmptyThing) {
+      setMessage({ type: 'error', text: 'Hãy điền đầy đủ cả 10 điều biết ơn để hoàn thành bài tập.' })
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
@@ -352,7 +352,7 @@ export default function MagicDayDetailPage() {
                 <p className="text-xs text-slate-400 mt-1">
                   {isQuickMode 
                     ? "Mỗi điều viết trên 1 dòng. Dùng mẫu: 'Tôi thực sự biết ơn [điều] vì [lý do]'" 
-                    : "Cấu trúc: 'Tôi thực sự biết ơn [Ai/Cái gì] bởi vì [Lý do]...'"}
+                    : "Điền vào chỗ trống bên dưới để hoàn thành 10 điều biết ơn."}
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">
@@ -361,7 +361,7 @@ export default function MagicDayDetailPage() {
                   onClick={() => setIsQuickMode(!isQuickMode)}
                   className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
                 >
-                  {isQuickMode ? "📋 Chuyển sang Điền ô" : "📝 Chuyển sang Nhập nhanh"}
+                  {isQuickMode ? "📋 Chuyển sang Sổ tay" : "📝 Chuyển sang Nhập nhanh"}
                 </button>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                   filledCount === 10 
@@ -384,42 +384,106 @@ export default function MagicDayDetailPage() {
                   onChange={(e) => parseAndSetQuickText(e.target.value)}
                   placeholder="1. Tôi thực sự biết ơn ... vì ...&#13;2. Tôi thực sự biết ơn ... vì ..."
                   rows={11}
-                  className="glass-input block w-full rounded-xl p-4 text-sm font-mono leading-relaxed focus:outline-none focus:ring-0 glass-input-gold whitespace-pre-wrap"
+                  className="glass-input block w-full rounded-xl p-4 text-sm font-mono leading-relaxed focus:outline-none focus:ring-0 glass-input-gold whitespace-pre-wrap animate-fadeIn"
                 />
+
+                {/* Live Preview for Quick Mode */}
+                <div className="mt-6 border-t border-white/5 pt-4">
+                  <h4 className="text-xs font-bold text-amber-400/80 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" /> Bản dịch trực quan (Live Preview)
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {items.map((item) => (
+                      <div key={item.id} className="bg-slate-900/40 border border-white/5 rounded-xl p-3.5 flex gap-2.5 items-start">
+                        <span className="text-xs font-black text-amber-500/70 mt-0.5">{item.id.toString().padStart(2, '0')}.</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-white truncate">
+                            {item.thing ? `Tôi thực sự biết ơn: ${item.thing}` : <span className="text-slate-600 italic font-normal">(Trống)</span>}
+                          </p>
+                          <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-2">
+                            {item.reason ? `vì: ${item.reason}` : <span className="text-slate-600 italic font-normal">(Chưa điền lý do)</span>}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                {items.map((item, idx) => (
-                  <div key={item.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                    {/* Thing */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">
-                        Điều {item.id}: Tôi thật sự biết ơn...
-                      </label>
-                      <input
-                        type="text"
-                        value={item.thing}
-                        onChange={(e) => handleItemChange(item.id, 'thing', e.target.value)}
-                        placeholder="ví dụ: cha mẹ của tôi, công việc hiện tại, sức khỏe của tôi..."
-                        className="glass-input block w-full rounded-lg px-3.5 py-2 text-sm placeholder-slate-600 focus:outline-none focus:ring-0 glass-input-gold"
-                      />
-                    </div>
-
-                    {/* Reason */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">
-                        Bởi vì...
-                      </label>
-                      <input
-                        type="text"
-                        value={item.reason}
-                        onChange={(e) => handleItemChange(item.id, 'reason', e.target.value)}
-                        placeholder="ví dụ: vì họ luôn ủng hộ tôi vô điều kiện, vì giúp tôi có thu nhập..."
-                        className="glass-input block w-full rounded-lg px-3.5 py-2 text-sm placeholder-slate-600 focus:outline-none focus:ring-0 glass-input-gold"
-                      />
-                    </div>
+              <div 
+                className="bg-slate-950/40 border border-amber-500/15 rounded-2xl p-4 md:p-6 space-y-4 relative shadow-inner overflow-hidden"
+                style={{ 
+                  backgroundImage: 'radial-gradient(ellipse at top right, rgba(245, 158, 11, 0.03), transparent 70%)'
+                }}
+              >
+                {/* Warning notice if some reasons are empty */}
+                {items.some(item => item.thing.trim() && !item.reason.trim()) && (
+                  <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 rounded-xl flex items-center gap-1.5 transition-all">
+                    <span>💡 <b>Gợi ý:</b> Hãy điền thêm &quot;Lý do&quot; (bởi vì...) để lòng biết ơn của bạn phát huy hiệu quả tốt nhất nhé! (Tuy nhiên, bạn vẫn có thể hoàn thành bài tập).</span>
                   </div>
-                ))}
+                )}
+
+                <div className="space-y-3 relative z-10">
+                  {items.map((item, idx) => (
+                    <div 
+                      key={item.id} 
+                      className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-3 py-3 border-b border-white/[0.02] last:border-0 hover:bg-amber-500/[0.01] px-2 rounded-lg transition-colors group"
+                    >
+                      {/* Number and static starter */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-black text-amber-500 tracking-tight min-w-[20px] select-none font-serif">
+                          {item.id.toString().padStart(2, '0')}.
+                        </span>
+                        <span className="text-xs font-semibold text-slate-400 group-focus-within:text-amber-400 transition-colors">
+                          Tôi thực sự biết ơn
+                        </span>
+                      </div>
+
+                      {/* Thing input */}
+                      <div className="flex-1 min-w-0">
+                        <input
+                          id={`thing-input-${idx}`}
+                          type="text"
+                          value={item.thing}
+                          onChange={(e) => handleItemChange(item.id, 'thing', e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              document.getElementById(`reason-input-${idx}`)?.focus()
+                            }
+                          }}
+                          placeholder="cha mẹ của tôi, sức khỏe, một người bạn..."
+                          className="w-full bg-transparent border-0 border-b border-white/10 group-focus-within:border-amber-500/30 focus:border-amber-500 focus:outline-none px-1 pb-1 text-sm text-white placeholder-slate-600 transition-all font-medium focus:ring-0 focus:shadow-none"
+                        />
+                      </div>
+
+                      {/* Split word 'vì' */}
+                      <span className="text-xs font-semibold text-slate-500 shrink-0 px-1 select-none">
+                        vì
+                      </span>
+
+                      {/* Reason input */}
+                      <div className="flex-1.5 min-w-0">
+                        <input
+                          id={`reason-input-${idx}`}
+                          type="text"
+                          value={item.reason}
+                          onChange={(e) => handleItemChange(item.id, 'reason', e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              if (idx < 9) {
+                                document.getElementById(`thing-input-${idx + 1}`)?.focus()
+                              }
+                            }
+                          }}
+                          placeholder="họ luôn chăm sóc tôi, giúp tôi học hỏi..."
+                          className="w-full bg-transparent border-0 border-b border-white/10 group-focus-within:border-amber-500/30 focus:border-amber-500 focus:outline-none px-1 pb-1 text-sm text-white placeholder-slate-600 transition-all font-medium focus:ring-0 focus:shadow-none"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

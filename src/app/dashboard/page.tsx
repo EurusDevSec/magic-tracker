@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [selectedMemberName, setSelectedMemberName] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedFeedDate, setSelectedFeedDate] = useState('')
 
   const isReportLate = (report: any) => {
     if (!report?.created_at) return false
@@ -80,16 +81,23 @@ export default function DashboardPage() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
-  // Generate dates: starting today, going forward into the future
+  // Generate dates: starting today, going backward into the past
   useEffect(() => {
     const list: string[] = []
     for (let i = 0; i < dateRangeSize; i++) {
       const d = new Date()
-      d.setDate(d.getDate() + i)
+      d.setDate(d.getDate() - i)
       list.push(d.toLocaleDateString('en-CA'))
     }
     setDatesList(list)
   }, [dateRangeSize])
+
+  // Set default feed date to today when datesList changes
+  useEffect(() => {
+    if (datesList.length > 0) {
+      setSelectedFeedDate(datesList[0])
+    }
+  }, [datesList])
 
   const fetchDashboardData = useCallback(async () => {
     if (!user || datesList.length === 0) return
@@ -98,8 +106,8 @@ export default function DashboardPage() {
       const [profilesRes, reportsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('reports').select('*')
-          .gte('report_date', datesList[0])
-          .lte('report_date', datesList[datesList.length - 1])
+          .gte('report_date', datesList[datesList.length - 1])
+          .lte('report_date', datesList[0])
       ])
       setMembers(profilesRes.data || [])
       setReports(reportsRes.data || [])
@@ -319,6 +327,124 @@ export default function DashboardPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+              </div>
+
+              {/* Reports and Plans Feed */}
+              <div className="glass-card p-6 rounded-2xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-violet-400" /> 📢 Bảng Tin Báo Cáo & Kế Hoạch Đề Xuất
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Theo dõi chi tiết công việc hôm nay và kế hoạch đề xuất ngày mai của các thành viên.</p>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 self-start sm:self-center no-print">
+                    <span className="text-xs text-slate-400 font-medium">Chọn ngày:</span>
+                    <select
+                      value={selectedFeedDate}
+                      onChange={(e) => setSelectedFeedDate(e.target.value)}
+                      className="bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer"
+                    >
+                      {datesList.map(dateStr => (
+                        <option key={dateStr} value={dateStr}>
+                          {new Date(dateStr + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'short', month: '2-digit', day: '2-digit' })}
+                          {dateStr === todayStr ? ' (Hôm nay)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {members.map((member, mIdx) => {
+                    const report = findReport(member.id, selectedFeedDate)
+                    const late = report ? isReportLate(report) : false
+                    const memberColor = MEMBER_COLORS[mIdx % MEMBER_COLORS.length]
+                    
+                    return (
+                      <div 
+                        key={member.id} 
+                        className={`rounded-2xl border bg-slate-900/40 p-4 transition-all duration-300 hover:border-white/15 flex flex-col justify-between ${
+                          report 
+                            ? 'border-white/5 shadow-md' 
+                            : 'border-dashed border-white/5 opacity-55'
+                        }`}
+                        style={report ? { borderLeft: `3px solid ${memberColor}` } : {}}
+                      >
+                        <div>
+                          {/* Card Header */}
+                          <div className="flex items-center justify-between gap-3 mb-3 border-b border-white/5 pb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-black border shrink-0"
+                                style={{ background: `${memberColor}20`, color: memberColor, borderColor: `${memberColor}40` }}>
+                                {member.full_name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-xs text-white truncate max-w-[120px]">{member.full_name}</div>
+                                <div className="text-[10px] text-slate-500 truncate max-w-[120px]">{member.email}</div>
+                              </div>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div>
+                              {report ? (
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
+                                  late 
+                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                }`}>
+                                  {late ? <Clock className="h-2.5 w-2.5" /> : <CheckCircle className="h-2.5 w-2.5" />}
+                                  {late ? `Nộp muộn (${formatSubmissionTime(report.created_at)})` : `Đúng hạn (${formatSubmissionTime(report.created_at)})`}
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-900 border border-white/5 text-slate-500 shrink-0">
+                                  Chưa nộp
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Body */}
+                          {report ? (
+                            <div className="space-y-3">
+                              {/* Today tasks */}
+                              <div>
+                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">✅ Công việc hôm nay</h4>
+                                <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed whitespace-pre-wrap">{report.today_tasks}</p>
+                              </div>
+
+                              {/* Highlighted next day plan */}
+                              <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3 shadow-inner">
+                                <h4 className="text-[10px] font-black text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                  🔮 Kế hoạch đề xuất ngày mai
+                                </h4>
+                                <p className="text-xs text-violet-200 font-medium leading-relaxed whitespace-pre-wrap">{report.next_day_plan}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center py-6 text-center">
+                              <Info className="h-5 w-5 text-slate-600 mb-1" />
+                              <p className="text-xs text-slate-500 italic">Thành viên này chưa nộp báo cáo cho ngày đã chọn.</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* View full button */}
+                        {report && (
+                          <div className="flex justify-end mt-4 pt-2 border-t border-white/5">
+                            <button
+                              onClick={() => { setSelectedReport(report); setSelectedMemberName(member.full_name); setIsModalOpen(true) }}
+                              className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5 cursor-pointer"
+                            >
+                              Xem toàn bộ báo cáo <span className="text-[11px]">→</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Submission Tracking Grid */}
