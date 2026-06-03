@@ -105,8 +105,9 @@ export default function ReportHistoryPage() {
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950">
       <Navigation />
       
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-5xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto w-full">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight">Lịch Sử Báo Cáo</h1>
             <p className="text-slate-400 text-sm mt-1">Danh sách các báo cáo bạn đã nộp từ trước đến nay.</p>
@@ -276,6 +277,7 @@ export default function ReportHistoryPage() {
             })}
           </div>
         )}
+        </div>
       </main>
     </div>
   )

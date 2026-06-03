@@ -291,7 +291,8 @@ export default function MagicDayDetailPage() {
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100">
       <Navigation />
 
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-4xl relative">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto w-full relative">
+        <div className="max-w-5xl mx-auto w-full">
         {/* Glow Blobs */}
         <div className="absolute top-10 right-10 w-80 h-80 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
 
@@ -575,6 +576,7 @@ export default function MagicDayDetailPage() {
             </button>
           </div>
 
+        </div>
         </div>
       </main>
     </div>

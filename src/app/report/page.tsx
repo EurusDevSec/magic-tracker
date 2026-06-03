@@ -29,13 +29,15 @@ export default function ReportPage() {
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950">
       <Navigation />
       
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Báo Cáo Tiến Độ</h1>
-          <p className="text-slate-400 text-sm mt-1">Ghi nhận tiến độ công việc hàng ngày của bạn.</p>
-        </div>
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto w-full">
+        <div className="max-w-5xl mx-auto w-full">
+          <div className="mb-8">
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Báo Cáo Tiến Độ</h1>
+            <p className="text-slate-400 text-sm mt-1">Ghi nhận tiến độ công việc hàng ngày của bạn.</p>
+          </div>
 
-        <ReportForm />
+          <ReportForm />
+        </div>
       </main>
     </div>
   )

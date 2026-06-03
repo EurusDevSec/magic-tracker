@@ -211,8 +211,9 @@ export default function NewGroupMeetingPage() {
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100">
       <Navigation />
 
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-4xl">
-        {/* Header */}
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto w-full">
+        <div className="max-w-5xl mx-auto w-full">
+          {/* Header */}
         <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-6">
           <Link href="/report/group" className="text-slate-400 hover:text-white transition-colors cursor-pointer mr-2">
             <ChevronLeft className="h-6 w-6" />
@@ -451,6 +452,7 @@ export default function NewGroupMeetingPage() {
               )}
             </div>
           </div>
+        </div>
         </div>
       </main>
     </div>

@@ -76,7 +76,8 @@ export default function MagicGratitudePage() {
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100">
       <Navigation />
 
-      <main className="flex-1 p-6 md:p-10 overflow-y-auto max-w-5xl relative">
+      <main className="flex-1 p-6 md:p-10 overflow-y-auto w-full relative">
+        <div className="max-w-6xl mx-auto w-full">
         {/* Glow Blobs */}
         <div className="absolute top-10 right-10 w-96 h-96 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
 
@@ -184,6 +185,7 @@ export default function MagicGratitudePage() {
             </p>
           </div>
         )}
+        </div>
       </main>
     </div>
   )

@@ -123,8 +123,9 @@ export default function ProfilePage() {
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100">
       <Navigation />
 
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-        {/* Title */}
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto w-full">
+        <div className="max-w-3xl mx-auto w-full">
+          {/* Title */}
         <div className="mb-8 border-b border-white/5 pb-5">
           <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-1">Cài Đặt Hệ Thống</p>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">👤 Trang Cá Nhân</h1>
@@ -263,6 +264,7 @@ export default function ProfilePage() {
 
             </form>
           </div>
+        </div>
         </div>
       </main>
     </div>

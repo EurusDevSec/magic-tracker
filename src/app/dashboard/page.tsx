@@ -263,7 +263,8 @@ export default function DashboardPage() {
         <div className="no-print"><Navigation /></div>
 
         <main className="flex-1 p-6 md:p-8 overflow-y-auto print-page">
-          {/* Title */}
+          <div className="max-w-7xl mx-auto w-full">
+            {/* Title */}
           <div className="mb-6 border-b border-white/5 pb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-violet-400 mb-1">ETI Tracker</p>
@@ -803,6 +804,7 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+          </div>
         </main>
 
         {/* Report Detail Modal */}
