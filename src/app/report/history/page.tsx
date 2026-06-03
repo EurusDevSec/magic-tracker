@@ -204,50 +204,58 @@ export default function ReportHistoryPage() {
 
                   {/* Expanded Body */}
                   {expanded && (
-                    <div className="border-t border-white/5 bg-slate-950/40 p-6 space-y-6">
+                    <div className="border-t border-white/10 bg-slate-900/40 p-6 space-y-5 rounded-b-2xl">
                       
                       {/* 1. Today Tasks */}
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet-400">
-                          <ListTodo className="h-4 w-4" /> Hôm nay làm gì
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-violet-300">
+                          <ListTodo className="h-4 w-4 text-violet-400" /> Hôm nay đã hoàn thành
                         </div>
-                        <p className="text-sm text-slate-200 whitespace-pre-wrap pl-6">
-                          {report.today_tasks}
-                        </p>
+                        <div className="bg-slate-950/40 border border-white/5 rounded-xl p-4 ml-6">
+                          <p className="text-[13.5px] text-slate-100 whitespace-pre-wrap leading-relaxed">
+                            {report.today_tasks}
+                          </p>
+                        </div>
                       </div>
 
                       {/* 2. Lessons Learned */}
                       {report.lessons_learned && (
                         <div className="space-y-2 border-t border-white/5 pt-4">
-                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet-400">
-                            <BookOpen className="h-4 w-4" /> Học được gì
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-violet-300">
+                            <BookOpen className="h-4 w-4 text-violet-400" /> Bài học đúc kết được
                           </div>
-                          <p className="text-sm text-slate-200 whitespace-pre-wrap pl-6">
-                            {report.lessons_learned}
-                          </p>
+                          <div className="bg-slate-950/40 border border-white/5 rounded-xl p-4 ml-6">
+                            <p className="text-[13.5px] text-slate-100 whitespace-pre-wrap leading-relaxed">
+                              {report.lessons_learned}
+                            </p>
+                          </div>
                         </div>
                       )}
 
                       {/* 3. Problems and Solutions */}
                       {report.problems_and_solutions && (
                         <div className="space-y-2 border-t border-white/5 pt-4">
-                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet-400">
-                            <HelpCircle className="h-4 w-4" /> Gặp khó khăn & Cách giải quyết
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-violet-300">
+                            <HelpCircle className="h-4 w-4 text-violet-400" /> Khó khăn & Giải pháp
                           </div>
-                          <p className="text-sm text-slate-200 whitespace-pre-wrap pl-6">
-                            {report.problems_and_solutions}
-                          </p>
+                          <div className="bg-slate-950/40 border border-white/5 rounded-xl p-4 ml-6">
+                            <p className="text-[13.5px] text-slate-100 whitespace-pre-wrap leading-relaxed">
+                              {report.problems_and_solutions}
+                            </p>
+                          </div>
                         </div>
                       )}
 
                       {/* 4. Next Day Plan */}
                       <div className="space-y-2 border-t border-white/5 pt-4">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-violet-400">
-                          <Calendar className="h-4 w-4" /> Ngày mai làm gì
+                        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-violet-300">
+                          <Calendar className="h-4 w-4 text-violet-400" /> Kế hoạch ngày mai
                         </div>
-                        <p className="text-sm text-slate-200 whitespace-pre-wrap pl-6">
-                          {report.next_day_plan}
-                        </p>
+                        <div className="bg-slate-950/40 border border-white/5 rounded-xl p-4 ml-6">
+                          <p className="text-[13.5px] text-slate-100 whitespace-pre-wrap leading-relaxed">
+                            {report.next_day_plan}
+                          </p>
+                        </div>
                       </div>
 
                       {/* Edit Button */}

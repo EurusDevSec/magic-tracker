@@ -208,53 +208,59 @@ export default function GroupMeetingHistoryPage() {
 
                           {/* Meeting contents */}
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="md:col-span-2 space-y-4">
+                            <div className="md:col-span-2 space-y-5">
                               {/* 1. Content discussed */}
-                              <div className="space-y-1">
-                                <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
                                   <BookOpen className="h-4 w-4 text-violet-400" /> 1. Nội dung trao đổi & kết quả họp
                                 </h4>
-                                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-wrap pl-5">{meeting.content}</p>
+                                <div className="bg-slate-950/45 border border-white/5 rounded-xl p-4 ml-6">
+                                  <p className="text-[13.5px] text-slate-100 leading-relaxed whitespace-pre-wrap">{meeting.content}</p>
+                                </div>
                               </div>
 
                               {/* 2. Difficulties and Blockers */}
-                              <div className="space-y-1">
-                                <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-bold text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
                                   <AlertTriangle className="h-4 w-4 text-rose-400" /> 2. Khó khăn / Vấn đề gặp phải
                                 </h4>
-                                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap pl-5">{meeting.difficulties}</p>
+                                <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-4 ml-6">
+                                  <p className="text-[13.5px] text-rose-100 leading-relaxed whitespace-pre-wrap">{meeting.difficulties}</p>
+                                </div>
                               </div>
 
                               {/* 3. Solutions */}
-                              <div className="space-y-1">
-                                <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <div className="space-y-2">
+                                <h4 className="text-xs font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                                   <Lightbulb className="h-4 w-4 text-emerald-400" /> 3. Giải pháp đề xuất
                                 </h4>
-                                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap pl-5">{meeting.solutions}</p>
+                                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4 ml-6">
+                                  <p className="text-[13.5px] text-emerald-100 leading-relaxed whitespace-pre-wrap">{meeting.solutions}</p>
+                                </div>
                               </div>
                             </div>
 
                             {/* 4. Task Assignments */}
-                            <div className="space-y-3 bg-white/[0.015] border border-white/5 rounded-2xl p-4 self-start">
-                              <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1.5 border-b border-white/5 pb-2">
+                            <div className="space-y-3 bg-slate-900/60 border border-white/10 rounded-2xl p-5 self-start shadow-md">
+                              <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5 border-b border-white/5 pb-2.5">
                                 <ClipboardList className="h-4 w-4 text-violet-400" /> Phân công nhiệm vụ
                               </h4>
                               
-                              <div className="space-y-3.5">
+                              <div className="space-y-4">
                                 {meeting.assignments.map((as, idx) => {
                                   const { initial, color, name } = getMemberInitialAndColor(as.user_id)
                                   return (
                                     <div key={idx} className="space-y-1">
                                       <div className="flex items-center gap-1.5">
                                         <div 
-                                          className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                                          className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-black text-white shrink-0 shadow"
                                           style={{ backgroundColor: color }}
                                         >
                                           {initial}
                                         </div>
-                                        <span className="text-xs font-bold text-slate-200">{name}</span>
+                                        <span className="text-xs.5 font-bold text-slate-100">{name}</span>
                                       </div>
-                                      <p className="text-xs text-slate-400 pl-6 leading-relaxed">{as.task}</p>
+                                      <p className="text-[12px] text-slate-300 pl-6 leading-relaxed font-normal">{as.task}</p>
                                     </div>
                                   )
                                 })}

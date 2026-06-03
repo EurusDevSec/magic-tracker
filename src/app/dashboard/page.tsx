@@ -465,31 +465,31 @@ export default function DashboardPage() {
                         return (
                           <div 
                             key={member.id} 
-                            className={`rounded-2xl border bg-slate-900/40 p-4 transition-all duration-300 hover:border-white/15 flex flex-col justify-between ${
+                            className={`rounded-2xl border bg-slate-900/65 p-5 transition-all duration-300 hover:border-violet-500/30 hover:bg-slate-900/80 flex flex-col justify-between ${
                               report 
-                                ? 'border-white/5 shadow-md' 
+                                ? 'border-white/10 shadow-lg shadow-black/10' 
                                 : 'border-dashed border-white/5 opacity-55'
                             }`}
                             style={report ? { borderLeft: `3px solid ${memberColor}` } : {}}
                           >
                             <div>
                               {/* Card Header */}
-                              <div className="flex items-center justify-between gap-3 mb-3 border-b border-white/5 pb-2">
+                              <div className="flex items-center justify-between gap-3 mb-3.5 border-b border-white/5 pb-2.5">
                                 <div className="flex items-center gap-2">
-                                  <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-black border shrink-0"
+                                  <div className="h-7.5 w-7.5 rounded-full flex items-center justify-center text-[10.5px] font-black border shrink-0"
                                     style={{ background: `${memberColor}20`, color: memberColor, borderColor: `${memberColor}40` }}>
                                     {member.full_name?.charAt(0)?.toUpperCase() || '?'}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="font-bold text-xs text-white truncate max-w-[120px]">{member.full_name}</div>
-                                    <div className="text-[10px] text-slate-500 truncate max-w-[120px]">{member.email}</div>
+                                    <div className="font-bold text-xs.5 text-white truncate max-w-[120px]">{member.full_name}</div>
+                                    <div className="text-[10px] text-slate-400 truncate max-w-[120px]">{member.email}</div>
                                   </div>
                                 </div>
 
                                 {/* Status Badge */}
                                 <div>
                                   {report ? (
-                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
+                                    <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
                                       late 
                                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
                                         : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -498,7 +498,7 @@ export default function DashboardPage() {
                                       {late ? `Nộp muộn` : `Đúng hạn`}
                                     </span>
                                   ) : (
-                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-900 border border-white/5 text-slate-500 shrink-0">
+                                    <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-slate-950 border border-white/5 text-slate-500 shrink-0">
                                       Chưa nộp
                                     </span>
                                   )}
@@ -507,35 +507,35 @@ export default function DashboardPage() {
 
                               {/* Card Body */}
                               {report ? (
-                                <div className="space-y-3">
+                                <div className="space-y-3.5">
                                   {/* Today tasks */}
                                   <div>
-                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">✅ Công việc hôm nay</h4>
-                                    <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed whitespace-pre-wrap">{report.today_tasks}</p>
+                                    <h4 className="text-[10.5px] font-bold text-slate-300 uppercase tracking-wider mb-1 flex items-center gap-1">📋 Công việc hôm nay</h4>
+                                    <p className="text-[13px] text-slate-100 line-clamp-3 leading-relaxed whitespace-pre-wrap font-normal">{report.today_tasks}</p>
                                   </div>
 
                                   {/* Highlighted next day plan */}
-                                  <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3 shadow-inner">
-                                    <h4 className="text-[10px] font-black text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                      🔮 Kế hoạch đề xuất ngày mai
+                                  <div className="bg-violet-950/35 border border-violet-500/25 rounded-xl p-3 shadow-inner">
+                                    <h4 className="text-[10.5px] font-black text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                      🔮 Kế hoạch ngày mai
                                     </h4>
-                                    <p className="text-xs text-violet-200 font-medium leading-relaxed whitespace-pre-wrap">{report.next_day_plan}</p>
+                                    <p className="text-[13px] text-violet-100 font-medium leading-relaxed whitespace-pre-wrap">{report.next_day_plan}</p>
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex flex-col items-center justify-center py-6 text-center">
-                                  <Info className="h-5 w-5 text-slate-600 mb-1" />
-                                  <p className="text-xs text-slate-500 italic text-[11px]">Chưa nộp báo cáo ngày này.</p>
+                                <div className="flex flex-col items-center justify-center py-8 text-center">
+                                  <Info className="h-5.5 w-5.5 text-slate-600 mb-1.5" />
+                                  <p className="text-xs text-slate-400 italic">Chưa nộp báo cáo ngày này.</p>
                                 </div>
                               )}
                             </div>
 
                             {/* View full button */}
                             {report && (
-                              <div className="flex justify-end mt-4 pt-2 border-t border-white/5">
+                              <div className="flex justify-end mt-4 pt-2.5 border-t border-white/5">
                                 <button
                                   onClick={() => { setSelectedReport(report); setSelectedMemberName(member.full_name); setIsModalOpen(true) }}
-                                  className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5 cursor-pointer"
+                                  className="text-[10.5px] font-bold text-violet-300 hover:text-violet-200 transition-colors flex items-center gap-0.5 cursor-pointer bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg border border-white/5"
                                 >
                                   Xem chi tiết <span className="text-[11px]">→</span>
                                 </button>
@@ -582,7 +582,7 @@ export default function DashboardPage() {
                           {dayMeetings.map(meeting => {
                             const writer = members.find(m => m.id === meeting.created_by)
                             return (
-                              <div key={meeting.id} className="relative overflow-hidden bg-gradient-to-b from-violet-950/15 to-violet-950/5 border border-violet-500/20 rounded-2xl p-5 space-y-4 shadow-lg hover:border-violet-500/35 transition-all">
+                              <div key={meeting.id} className="relative overflow-hidden bg-slate-900/75 border border-violet-500/25 rounded-2xl p-5 space-y-4 shadow-lg hover:border-violet-500/40 transition-all">
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full blur-xl pointer-events-none" />
                                 
                                 <div className="flex items-center justify-between gap-3 text-xs border-b border-white/5 pb-2.5">
@@ -592,26 +592,26 @@ export default function DashboardPage() {
                                   <span className="text-[10px] text-slate-400">Lập bởi: <span className="font-semibold text-slate-300">{writer?.full_name?.split(' ').pop() || 'Thành viên'}</span></span>
                                 </div>
 
-                                <div className="space-y-3">
+                                <div className="space-y-3.5">
                                   <div>
-                                    <span className="text-[10px] font-bold text-violet-400 uppercase tracking-wider block mb-1">📝 Nội dung trao đổi</span>
-                                    <p className="text-xs text-slate-200 leading-relaxed line-clamp-3 whitespace-pre-wrap">{meeting.content}</p>
+                                    <span className="text-[10.5px] font-bold text-violet-300 uppercase tracking-wider block mb-1">📝 Nội dung cuộc họp</span>
+                                    <p className="text-[13px] text-slate-100 leading-relaxed line-clamp-3 whitespace-pre-wrap font-normal">{meeting.content}</p>
                                   </div>
 
                                   <div className="grid grid-cols-2 gap-3 pt-1">
-                                    <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl p-2.5">
-                                      <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider block mb-0.5">⚠️ Khó khăn</span>
-                                      <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-2 whitespace-pre-wrap">{meeting.difficulties || 'Không có'}</p>
+                                    <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-2.5 shadow-sm">
+                                      <span className="text-[9.5px] font-bold text-rose-400 uppercase tracking-wider block mb-0.5">⚠️ Khó khăn</span>
+                                      <p className="text-[11.5px] text-rose-100 leading-relaxed line-clamp-2 whitespace-pre-wrap">{meeting.difficulties || 'Không có'}</p>
                                     </div>
-                                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-2.5">
-                                      <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider block mb-0.5">💡 Giải pháp</span>
-                                      <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-2 whitespace-pre-wrap">{meeting.solutions || 'Không có'}</p>
+                                    <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-2.5 shadow-sm">
+                                      <span className="text-[9.5px] font-bold text-emerald-400 uppercase tracking-wider block mb-0.5">💡 Giải pháp</span>
+                                      <p className="text-[11.5px] text-emerald-100 leading-relaxed line-clamp-2 whitespace-pre-wrap">{meeting.solutions || 'Không có'}</p>
                                     </div>
                                   </div>
 
                                   {meeting.assignments && meeting.assignments.length > 0 && (
-                                    <div className="bg-slate-950/40 border border-white/5 rounded-xl p-3 space-y-2">
-                                      <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wider block border-b border-white/5 pb-1">🎯 Phân công ({meeting.assignments.length})</span>
+                                    <div className="bg-slate-950/50 border border-white/10 rounded-xl p-3 space-y-2">
+                                      <span className="text-[9.5px] font-bold text-violet-300 uppercase tracking-wider block border-b border-white/5 pb-1">🎯 Phân công ({meeting.assignments.length})</span>
                                       <div className="space-y-2 max-h-[110px] overflow-y-auto pr-1 custom-scrollbar">
                                         {meeting.assignments.slice(0, 3).map((as: any, idx: number) => {
                                           const member = members.find(m => m.id === as.user_id)
@@ -620,11 +620,11 @@ export default function DashboardPage() {
                                           const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
                                           return (
                                             <div key={idx} className="space-y-0.5">
-                                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
+                                              <div className="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-200">
                                                 <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                                                 <span className="truncate">{name}</span>
                                               </div>
-                                              <p className="text-[9px] text-slate-400 leading-relaxed pl-3 truncate">{as.task}</p>
+                                              <p className="text-[10px] text-slate-300 leading-relaxed pl-3 truncate font-normal">{as.task}</p>
                                             </div>
                                           )
                                         })}
@@ -638,7 +638,7 @@ export default function DashboardPage() {
                                   )}
                                 </div>
 
-                                <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/5 text-xs text-slate-500">
+                                <div className="flex items-center justify-between gap-2 pt-3.5 border-t border-white/5 text-xs text-slate-500">
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-[9px] uppercase font-bold text-slate-500">Tham gia:</span>
                                     <div className="flex -space-x-1 overflow-hidden">
@@ -667,7 +667,7 @@ export default function DashboardPage() {
 
                                   <button
                                     onClick={() => { setSelectedMeeting(meeting); setIsMeetingModalOpen(true) }}
-                                    className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5 cursor-pointer bg-violet-500/10 border border-violet-500/20 px-2.5 py-1.5 rounded-lg"
+                                    className="text-[10.5px] font-bold text-white transition-all duration-200 cursor-pointer bg-violet-600 hover:bg-violet-500 border border-violet-500/20 px-3 py-1.5 rounded-lg shadow-md shadow-violet-600/10"
                                   >
                                     Chi tiết <span className="text-[11px]">→</span>
                                   </button>
@@ -840,9 +840,9 @@ export default function DashboardPage() {
                 ].map((section, i) => (
                   section.content ? (
                     <div key={i} className={i > 0 ? 'border-t border-white/5 pt-4' : ''}>
-                      <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">{section.label}</h4>
-                      <div className="bg-slate-900/60 rounded-xl p-4 border border-white/5">
-                        <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">{section.content}</p>
+                      <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider mb-2">{section.label}</h4>
+                      <div className="bg-slate-900/80 rounded-xl p-5 border border-white/10 shadow-lg">
+                        <p className="text-[14.5px] text-slate-100 whitespace-pre-wrap leading-relaxed">{section.content}</p>
                       </div>
                     </div>
                   ) : null
@@ -884,7 +884,7 @@ export default function DashboardPage() {
               <div className="p-5 overflow-y-auto space-y-5 flex-1">
                 {/* Participants */}
                 <div>
-                  <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">👥 Thành viên tham gia</h4>
+                  <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider mb-2">👥 Thành viên tham gia</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedMeeting.participants.map((pId: string) => {
                       const member = members.find(m => m.id === pId)
@@ -905,9 +905,9 @@ export default function DashboardPage() {
 
                 {/* Content */}
                 <div>
-                  <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">📝 1. Nội dung trao đổi & Kết quả</h4>
-                  <div className="bg-slate-900/60 rounded-xl p-4 border border-white/5">
-                    <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">{selectedMeeting.content}</p>
+                  <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider mb-2">📝 1. Nội dung trao đổi & Kết quả</h4>
+                  <div className="bg-slate-900/80 rounded-xl p-5 border border-white/10 shadow-lg">
+                    <p className="text-[14.5px] text-slate-100 whitespace-pre-wrap leading-relaxed">{selectedMeeting.content}</p>
                   </div>
                 </div>
 
@@ -915,14 +915,14 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">⚠️ 2. Khó khăn gặp phải</h4>
-                    <div className="bg-rose-950/5 rounded-xl p-4 border border-rose-500/15 min-h-[100px]">
-                      <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{selectedMeeting.difficulties || 'Không có ghi nhận khó khăn.'}</p>
+                    <div className="bg-rose-950/20 border border-rose-500/20 rounded-xl p-4 min-h-[100px] shadow-sm">
+                      <p className="text-[13.5px] text-rose-100 whitespace-pre-wrap leading-relaxed">{selectedMeeting.difficulties || 'Không có ghi nhận khó khăn.'}</p>
                     </div>
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">💡 3. Giải pháp đề xuất</h4>
-                    <div className="bg-emerald-950/5 rounded-xl p-4 border border-emerald-500/15 min-h-[100px]">
-                      <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{selectedMeeting.solutions || 'Không có đề xuất giải pháp mới.'}</p>
+                    <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4 min-h-[100px] shadow-sm">
+                      <p className="text-[13.5px] text-emerald-100 whitespace-pre-wrap leading-relaxed">{selectedMeeting.solutions || 'Không có đề xuất giải pháp mới.'}</p>
                     </div>
                   </div>
                 </div>
@@ -930,13 +930,13 @@ export default function DashboardPage() {
                 {/* Task assignments */}
                 {selectedMeeting.assignments && selectedMeeting.assignments.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">🎯 4. Phân công công việc tiếp theo</h4>
-                    <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden">
-                      <table className="w-full text-left border-collapse text-xs">
+                    <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider mb-2">🎯 4. Phân công công việc tiếp theo</h4>
+                    <div className="bg-slate-900/85 border border-white/10 rounded-xl overflow-hidden shadow-md">
+                      <table className="w-full text-left border-collapse text-[13px]">
                         <thead>
-                          <tr className="border-b border-white/5 bg-slate-950/30">
-                            <th className="py-2.5 px-4 font-bold text-slate-400 w-1/3">Thành viên</th>
-                            <th className="py-2.5 px-4 font-bold text-slate-400">Nhiệm vụ được giao</th>
+                          <tr className="border-b border-white/10 bg-slate-950/40">
+                            <th className="py-3 px-4 font-bold text-slate-300 w-1/3">Thành viên</th>
+                            <th className="py-3 px-4 font-bold text-slate-300">Nhiệm vụ được giao</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -946,12 +946,12 @@ export default function DashboardPage() {
                             const memberIndex = members.findIndex(m => m.id === as.user_id)
                             const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
                             return (
-                              <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/[0.01]">
-                                <td className="py-3 px-4 font-bold text-slate-200 flex items-center gap-2">
+                              <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                                <td className="py-3.5 px-4 font-bold text-slate-100 flex items-center gap-2">
                                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
                                   {name}
                                 </td>
-                                <td className="py-3 px-4 text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                <td className="py-3.5 px-4 text-slate-200 leading-relaxed whitespace-pre-wrap font-normal">
                                   {as.task}
                                 </td>
                               </tr>
