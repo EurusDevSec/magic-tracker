@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
@@ -15,7 +15,8 @@ import {
   HelpCircle, 
   BookOpen,
   Compass,
-  Smile
+  Smile,
+  AlertTriangle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -28,11 +29,37 @@ type GratitudeItem = {
 export default function MagicDayDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const supabase = createClient()
+  const searchParams = useSearchParams()
+  const queryUserId = searchParams ? searchParams.get('userId') : null
+  const isViewingOthers = !!(queryUserId && queryUserId !== user?.id && profile?.role === 'admin')
+  const targetUserId = isViewingOthers ? queryUserId : user?.id
+  const [targetProfileName, setTargetProfileName] = useState('')
   
   const dayNum = parseInt(params.dayNum as string)
   const dayConfig = MAGIC_DAYS.find(d => d.day === dayNum)
+
+  // Fetch target profile name if viewing others
+  useEffect(() => {
+    if (isViewingOthers && queryUserId) {
+      const fetchTargetProfile = async () => {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', queryUserId)
+            .single()
+          if (data) {
+            setTargetProfileName(data.full_name || 'Thành viên')
+          }
+        } catch (err) {
+          console.error(err)
+        }
+      }
+      fetchTargetProfile()
+    }
+  }, [isViewingOthers, queryUserId, supabase])
 
   // Form States
   const [items, setItems] = useState<GratitudeItem[]>(
@@ -111,22 +138,23 @@ export default function MagicDayDetailPage() {
 
     const checkAccessAndLoad = async () => {
       try {
-        // 1. Fetch user's completed days
+        const targetId = isViewingOthers ? queryUserId : user.id
+        // 1. Fetch target user's completed days
         const { data: logs, error: logErr } = await supabase
           .from('gratitude_logs')
           .select('day_number, gratitude_list, magic_stone_thought, day_specific_practice')
-          .eq('user_id', user.id)
+          .eq('user_id', targetId)
 
         if (logErr) throw logErr
 
         const completedDays = logs?.map((l: { day_number: number }) => l.day_number) || []
         
         // Lock rules: must complete all prior days
-        // (e.g. to do Day 3, they must have completed Day 1 and 2, which means length >= 2)
         const isCompleted = completedDays.includes(dayNum)
         const maxAvailableDay = completedDays.length + 1
         
-        if (dayNum > maxAvailableDay && !isCompleted) {
+        // Only redirect if NOT viewing as admin
+        if (!isViewingOthers && dayNum > maxAvailableDay && !isCompleted) {
           // Attempting to access a locked day
           router.push('/magic')
           return
@@ -180,7 +208,7 @@ export default function MagicDayDetailPage() {
 
   // Save Draft to localStorage on input change
   useEffect(() => {
-    if (checkingAccess || isEditMode || !dayConfig) return
+    if (checkingAccess || isEditMode || isViewingOthers || !dayConfig) return
 
     const draft = {
       items,
@@ -205,7 +233,7 @@ export default function MagicDayDetailPage() {
 
   // Submit Logic
   const handleSubmit = async () => {
-    if (!user || !dayConfig) return
+    if (!user || !dayConfig || isViewingOthers) return
 
     // Validate gratitude entries (must be exactly 10!)
     const hasEmptyThing = items.some(item => !item.thing.trim())
@@ -304,6 +332,13 @@ export default function MagicDayDetailPage() {
           <ArrowLeft className="h-4 w-4" /> Quay lại Bản đồ Phép màu
         </Link>
 
+        {isViewingOthers && (
+          <div className="mb-6 rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-400 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 shrink-0 animate-pulse" />
+            <span>Bạn đang xem nhật ký biết ơn của <strong>{targetProfileName}</strong>. Chế độ chỉ đọc (Read-only).</span>
+          </div>
+        )}
+
         {/* Header Block */}
         <div className="glass-card p-6 md:p-8 border-amber-500/20 bg-amber-950/10 rounded-2xl mb-8">
           <div className="flex justify-between items-start gap-4">
@@ -348,7 +383,7 @@ export default function MagicDayDetailPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Smile className="h-5 w-5 text-amber-400" /> 10 Điều Biết Ơn Của Bạn
+                  <Smile className="h-5 w-5 text-amber-400" /> {isViewingOthers ? `10 Điều Biết Ơn Của ${targetProfileName}` : '10 Điều Biết Ơn Của Bạn'}
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
                   {isQuickMode 
@@ -357,13 +392,15 @@ export default function MagicDayDetailPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start sm:self-center">
-                <button
-                  type="button"
-                  onClick={() => setIsQuickMode(!isQuickMode)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
-                >
-                  {isQuickMode ? "📋 Chuyển sang Sổ tay" : "📝 Chuyển sang Nhập nhanh"}
-                </button>
+                {!isViewingOthers && (
+                  <button
+                    type="button"
+                    onClick={() => setIsQuickMode(!isQuickMode)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 transition-all cursor-pointer"
+                  >
+                    {isQuickMode ? "📋 Chuyển sang Sổ tay" : "📝 Chuyển sang Nhập nhanh"}
+                  </button>
+                )}
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
                   filledCount === 10 
                     ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' 
@@ -445,6 +482,7 @@ export default function MagicDayDetailPage() {
                         <input
                           id={`thing-input-${idx}`}
                           type="text"
+                          disabled={isViewingOthers}
                           value={item.thing}
                           onChange={(e) => handleItemChange(item.id, 'thing', e.target.value)}
                           onKeyDown={(e) => {
@@ -468,6 +506,7 @@ export default function MagicDayDetailPage() {
                         <input
                           id={`reason-input-${idx}`}
                           type="text"
+                          disabled={isViewingOthers}
                           value={item.reason}
                           onChange={(e) => handleItemChange(item.id, 'reason', e.target.value)}
                           onKeyDown={(e) => {
@@ -507,6 +546,7 @@ export default function MagicDayDetailPage() {
                         value={extraValues[input.key] || ''}
                         onChange={(e) => handleExtraChange(input.key, e.target.value)}
                         placeholder={input.placeholder}
+                        disabled={isViewingOthers}
                         rows={6}
                         className="glass-input block w-full rounded-xl p-4 text-sm focus:outline-none glass-input-gold"
                       />
@@ -516,6 +556,7 @@ export default function MagicDayDetailPage() {
                         value={extraValues[input.key] || ''}
                         onChange={(e) => handleExtraChange(input.key, e.target.value)}
                         placeholder={input.placeholder}
+                        disabled={isViewingOthers}
                         className="glass-input block w-full rounded-lg p-3 text-sm focus:outline-none glass-input-gold"
                       />
                     )}
@@ -543,6 +584,7 @@ export default function MagicDayDetailPage() {
                   value={magicStone}
                   onChange={(e) => setMagicStone(e.target.value)}
                   placeholder="Ví dụ:&#13;• Hôm nay tôi hoàn thành xuất sắc buổi thuyết trình sản phẩm mới và nhận được lời khen từ giám đốc.&#13;• Chiều nay gia đình cùng nhau quây quần ăn bữa tối vui vẻ ấm áp.&#13;• Gặp lại người bạn thân đã lâu không liên lạc..."
+                  disabled={isViewingOthers}
                   rows={4}
                   className="glass-input block w-full rounded-xl p-4 text-sm focus:outline-none glass-input-gold"
                 />
@@ -556,24 +598,26 @@ export default function MagicDayDetailPage() {
               href="/magic"
               className="text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
-              Hủy bỏ & quay lại
+              {isViewingOthers ? 'Quay lại bản đồ' : 'Hủy bỏ & quay lại'}
             </Link>
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm px-6 py-2.5 rounded-lg transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Đang lưu...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" /> {isEditMode ? 'Cập nhật bài tập' : 'Hoàn thành Ngày'}
-                </>
-              )}
-            </button>
+            {!isViewingOthers && (
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm px-6 py-2.5 rounded-lg transition-all duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-50 cursor-pointer"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Đang lưu...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" /> {isEditMode ? 'Cập nhật bài tập' : 'Hoàn thành Ngày'}
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
         </div>

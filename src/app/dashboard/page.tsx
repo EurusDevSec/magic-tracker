@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
+import UserAvatar from '@/components/UserAvatar'
 import Link from 'next/link'
 import {
   BarChart, Bar, PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
@@ -155,7 +156,7 @@ export default function DashboardPage() {
           .gte('meeting_date', datesList[datesList.length - 1])
           .lte('meeting_date', datesList[0])
       ])
-      setMembers(profilesRes.data || [])
+      setMembers((profilesRes.data || []).filter((m: Profile) => m.role !== 'admin'))
       setReports(reportsRes.data || [])
       setGroupMeetings(groupMeetingsRes.data || [])
     } catch (err) {
@@ -477,10 +478,12 @@ export default function DashboardPage() {
                               {/* Card Header */}
                               <div className="flex items-center justify-between gap-3 mb-3.5 border-b border-white/5 pb-2.5">
                                 <div className="flex items-center gap-2">
-                                  <div className="h-7.5 w-7.5 rounded-full flex items-center justify-center text-[10.5px] font-black border shrink-0"
-                                    style={{ background: `${memberColor}20`, color: memberColor, borderColor: `${memberColor}40` }}>
-                                    {member.full_name?.charAt(0)?.toUpperCase() || '?'}
-                                  </div>
+                                  <UserAvatar
+                                    avatarUrl={member.avatar_url}
+                                    fullName={member.full_name}
+                                    sizeClass="h-7.5 w-7.5 text-[10.5px]"
+                                    style={{ backgroundColor: `${memberColor}20`, color: memberColor, borderColor: `${memberColor}40`, borderWidth: '1px' }}
+                                  />
                                   <div className="min-w-0">
                                     <div className="font-bold text-xs.5 text-white truncate max-w-[120px]">{member.full_name}</div>
                                     <div className="text-[10px] text-slate-400 truncate max-w-[120px]">{member.email}</div>
@@ -648,14 +651,13 @@ export default function DashboardPage() {
                                         const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
                                         const initial = members.find(m => m.id === pId)?.full_name?.charAt(0).toUpperCase() || '?'
                                         return (
-                                          <div 
-                                            key={pId} 
-                                            className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-black text-white border border-slate-900 shadow shrink-0"
-                                            style={{ backgroundColor: color }}
-                                            title={members.find(m => m.id === pId)?.full_name}
-                                          >
-                                            {initial}
-                                          </div>
+                                          <UserAvatar
+                                            key={pId}
+                                            avatarUrl={members.find(m => m.id === pId)?.avatar_url}
+                                            fullName={members.find(m => m.id === pId)?.full_name || '?'}
+                                            sizeClass="h-5 w-5 text-[8px]"
+                                            style={{ backgroundColor: color, borderWidth: '1px', borderColor: 'rgb(15 23 42)' }}
+                                          />
                                         )
                                       })}
                                       {meeting.participants.length > 4 && (
@@ -895,9 +897,12 @@ export default function DashboardPage() {
                       const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
                       return (
                         <div key={pId} className="flex items-center gap-1.5 bg-slate-900 border border-white/5 rounded-full pl-1.5 pr-3 py-1 text-xs text-slate-200">
-                          <span className="h-4.5 w-4.5 rounded-full flex items-center justify-center text-[8px] font-black text-white" style={{ backgroundColor: color }}>
-                            {name.charAt(0).toUpperCase()}
-                          </span>
+                          <UserAvatar
+                            avatarUrl={member?.avatar_url}
+                            fullName={name}
+                            sizeClass="h-4.5 w-4.5 text-[8px]"
+                            style={{ backgroundColor: color }}
+                          />
                           <span className="font-medium">{name}</span>
                         </div>
                       )

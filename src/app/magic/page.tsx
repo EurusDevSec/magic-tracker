@@ -15,11 +15,31 @@ type GratitudeLog = {
 }
 
 export default function MagicGratitudePage() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
   const supabase = createClient()
   const [completedDays, setCompletedDays] = useState<number[]>([])
   const [fetching, setFetching] = useState(true)
+  const [members, setMembers] = useState<any[]>([])
+  const [selectedMemberId, setSelectedMemberId] = useState<string>('')
+
+  // Fetch profiles for admin view
+  useEffect(() => {
+    if (profile?.role === 'admin') {
+      const fetchMembers = async () => {
+        try {
+          const { data } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('full_name')
+          setMembers(data || [])
+        } catch (err) {
+          console.error('Error fetching members:', err)
+        }
+      }
+      fetchMembers()
+    }
+  }, [profile, supabase])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -31,11 +51,13 @@ export default function MagicGratitudePage() {
     if (!user) return
 
     const fetchLogs = async () => {
+      setFetching(true)
+      const targetUserId = selectedMemberId || user.id
       try {
         const { data, error } = await supabase
           .from('gratitude_logs')
           .select('day_number, log_date')
-          .eq('user_id', user.id)
+          .eq('user_id', targetUserId)
 
         if (error) throw error
         
@@ -49,7 +71,7 @@ export default function MagicGratitudePage() {
     }
 
     fetchLogs()
-  }, [user, supabase])
+  }, [user, selectedMemberId, supabase])
 
   // Determine which is the next day they need to complete
   // (e.g. if they have completed 1, 2, next is 3)
@@ -111,6 +133,25 @@ export default function MagicGratitudePage() {
           </div>
         </div>
 
+        {/* Admin Member Selector */}
+        {profile?.role === 'admin' && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 mb-6">
+            <span className="text-sm font-semibold text-slate-300">Xem tiến độ của thành viên:</span>
+            <select
+              value={selectedMemberId}
+              onChange={(e) => setSelectedMemberId(e.target.value)}
+              className="glass-input bg-slate-900 border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none text-white cursor-pointer min-w-[200px]"
+            >
+              <option value="">Của bạn (Admin)</option>
+              {members.filter(m => m.id !== user.id).map(m => (
+                <option key={m.id} value={m.id}>
+                  {m.full_name || m.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {fetching ? (
           <div className="flex justify-center items-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
@@ -126,7 +167,7 @@ export default function MagicGratitudePage() {
                 <div key={day.day} className="relative">
                   {/* Card link wrapper */}
                   <Link
-                    href={isLocked ? '#' : `/magic/day/${day.day}`}
+                    href={isLocked ? '#' : `/magic/day/${day.day}${selectedMemberId ? `?userId=${selectedMemberId}` : ''}`}
                     className={`h-32 rounded-xl border flex flex-col items-center justify-center p-3 text-center transition-all duration-300 ${
                       isCompleted 
                         ? 'bg-amber-600/10 border-amber-500/30 text-amber-400 cursor-pointer hover:bg-amber-600/20' 

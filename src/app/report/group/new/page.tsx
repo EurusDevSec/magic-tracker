@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
+import UserAvatar from '@/components/UserAvatar'
 import { 
   Users, Calendar, Clock, BookOpen, AlertTriangle, 
   Lightbulb, ClipboardList, ChevronLeft, ChevronRight, Save, Loader2 
@@ -329,6 +330,11 @@ export default function NewGroupMeetingPage() {
                             }`}>
                               {isSelected && <span className="text-[10px] font-bold">✓</span>}
                             </div>
+                            <UserAvatar
+                              avatarUrl={p.avatar_url}
+                              fullName={p.full_name || p.email}
+                              sizeClass="h-5 w-5 text-[9px]"
+                            />
                             <span className="text-xs truncate font-semibold">{p.full_name || p.email}</span>
                           </button>
                         )

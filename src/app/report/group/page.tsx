@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
+import UserAvatar from '@/components/UserAvatar'
 import { 
   Users, Plus, Calendar, Clock, User, 
   BookOpen, AlertTriangle, Lightbulb, ClipboardList, Loader2 
@@ -277,14 +278,13 @@ export default function GroupMeetingHistoryPage() {
                                 {meeting.participants.map((pId) => {
                                   const { initial, color, name } = getMemberInitialAndColor(pId)
                                   return (
-                                    <div 
-                                      key={pId} 
-                                      className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-black text-white border border-slate-900 shadow-md cursor-help"
-                                      style={{ backgroundColor: color }}
-                                      title={name}
-                                    >
-                                      {initial}
-                                    </div>
+                                    <UserAvatar
+                                      key={pId}
+                                      avatarUrl={profiles.find(p => p.id === pId)?.avatar_url}
+                                      fullName={name}
+                                      sizeClass="h-6 w-6 text-[9px]"
+                                      style={{ backgroundColor: color, borderWidth: '1px', borderColor: 'rgb(15 23 42)' }}
+                                    />
                                   )
                                 })}
                               </div>
