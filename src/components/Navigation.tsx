@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import {
   Calendar, History, BarChart2,
-  Heart, LogOut, User as UserIcon
+  Heart, LogOut, User as UserIcon, Users
 } from 'lucide-react'
 
 export default function Navigation() {
@@ -16,6 +16,7 @@ export default function Navigation() {
     { href: '/dashboard', label: 'Bảng Tổng Quan', icon: BarChart2 },
     { href: '/report', label: 'Báo cáo tiến độ', icon: Calendar },
     { href: '/report/history', label: 'Lịch sử báo cáo', icon: History },
+    { href: '/report/group', label: 'Họp nhóm định kỳ', icon: Users },
     { href: '/magic', label: '28 Ngày Biết Ơn', icon: Heart, magic: true },
     { href: '/profile', label: 'Trang cá nhân', icon: UserIcon },
   ]

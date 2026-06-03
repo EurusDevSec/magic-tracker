@@ -215,10 +215,51 @@ export const initializeMockData = () => {
     }
   ];
 
+  // 5. Initial Mock Group Meetings (Tuesdays and Saturdays)
+  const initialGroupMeetings = [
+    {
+      id: 'meeting-1',
+      meeting_date: datesList[4], // Saturday
+      meeting_time: '19:00:00',
+      duration_minutes: 45,
+      participants: ['user-tien', 'user-hoang', 'user-linh'],
+      content: 'Nhóm họp bàn về tiến độ tuần qua. Thống nhất về cấu hình Docker, hoàn thành layout Dashboard và setup cơ sở dữ liệu sơ bộ cho WordPress trên VPS.',
+      difficulties: 'Tài nguyên EC2 bị giới hạn gây lỗi OOM khi build Docker. Gặp khó khăn khi cấu hình chứng chỉ SSL Let\'s Encrypt.',
+      solutions: 'Tạo swap memory cho EC2 để chống lỗi tràn bộ nhớ RAM. Cấu hình DNS Cloudflare về chế độ DNS only để trỏ SSL Let\'s Encrypt cục bộ trước.',
+      assignments: [
+        { user_id: 'user-tien', task: 'Kết nối Cloudflare Tunnel và sửa lỗi SSL WordPress.' },
+        { user_id: 'user-hoang', task: 'Xử lý webhook Sepay thanh toán tự động và viết API log.' },
+        { user_id: 'user-linh', task: 'Thiết kế chi tiết trang Login, Register và hoàn thiện biểu đồ Recharts.' }
+      ],
+      created_by: 'user-tien',
+      created_at: new Date(datesList[4] + 'T20:00:00').toISOString(),
+      updated_at: new Date(datesList[4] + 'T20:00:00').toISOString()
+    },
+    {
+      id: 'meeting-2',
+      meeting_date: datesList[1], // Tuesday
+      meeting_time: '19:30:00',
+      duration_minutes: 50,
+      participants: ['user-tien', 'user-hoang', 'user-linh'],
+      content: 'Thảo luận về việc tích hợp API thanh toán tự động Sepay và xử lý lỗi UI của biểu đồ Dashboard. Kiểm tra hạ tầng bảo mật Cloudflare Tunnel.',
+      difficulties: 'Sepay Webhook bị chặn bởi Cloudflare firewall. UI của biểu đồ bị lệch layout trên trình duyệt Safari.',
+      solutions: 'Cấu hình whitelist IP của Sepay trên Cloudflare WAF. Sửa CSS Autoprefixer và Flexbox để tương thích với Safari.',
+      assignments: [
+        { user_id: 'user-tien', task: 'Viết tài liệu bàn giao hạ tầng mạng cho sếp.' },
+        { user_id: 'user-hoang', task: 'Viết test cases và chạy thử nghiệm thanh toán tự động.' },
+        { user_id: 'user-linh', task: 'Hoàn thiện luồng kiểm thử giao diện người dùng (UX flow).' }
+      ],
+      created_by: 'user-hoang',
+      created_at: new Date(datesList[1] + 'T20:30:00').toISOString(),
+      updated_at: new Date(datesList[1] + 'T20:30:00').toISOString()
+    }
+  ];
+
   localStorage.setItem('mock-supabase-users', JSON.stringify(initialUsers));
   localStorage.setItem('mock-supabase-profiles', JSON.stringify(initialProfiles));
   localStorage.setItem('mock-supabase-reports', JSON.stringify(initialReports));
   localStorage.setItem('mock-supabase-gratitude_logs', JSON.stringify(initialGratitudeLogs));
+  localStorage.setItem('mock-supabase-group_meetings', JSON.stringify(initialGroupMeetings));
   localStorage.setItem('mock-supabase-initialized', 'true');
 };
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
+import Link from 'next/link'
 import {
   BarChart, Bar, PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   XAxis, YAxis, CartesianGrid, Legend, LabelList
@@ -96,6 +97,9 @@ export default function DashboardPage() {
   const [selectedMemberName, setSelectedMemberName] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedFeedDate, setSelectedFeedDate] = useState('')
+  const [groupMeetings, setGroupMeetings] = useState<any[]>([])
+  const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null)
+  const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false)
   
 
   const isReportLate = (report: any) => {
@@ -142,14 +146,18 @@ export default function DashboardPage() {
     if (!user || datesList.length === 0) return
     setFetching(true)
     try {
-      const [profilesRes, reportsRes] = await Promise.all([
+      const [profilesRes, reportsRes, groupMeetingsRes] = await Promise.all([
         supabase.from('profiles').select('*').order('full_name'),
         supabase.from('reports').select('*')
           .gte('report_date', datesList[datesList.length - 1])
-          .lte('report_date', datesList[0])
+          .lte('report_date', datesList[0]),
+        supabase.from('group_meetings').select('*')
+          .gte('meeting_date', datesList[datesList.length - 1])
+          .lte('meeting_date', datesList[0])
       ])
       setMembers(profilesRes.data || [])
       setReports(reportsRes.data || [])
+      setGroupMeetings(groupMeetingsRes.data || [])
     } catch (err) {
       console.error('Error fetching dashboard data:', err)
     } finally {
@@ -436,96 +444,241 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {members.map((member, mIdx) => {
-                    const report = findReport(member.id, selectedFeedDate)
-                    const late = report ? isReportLate(report) : false
-                    const memberColor = MEMBER_COLORS[mIdx % MEMBER_COLORS.length]
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Left Column: Báo cáo cá nhân (2/3 width) */}
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        👤 Báo cáo cá nhân
+                      </h4>
+                      <span className="text-[10px] bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5 text-violet-300 font-semibold">
+                        {members.filter(m => findReport(m.id, selectedFeedDate)).length}/{members.length} đã nộp
+                      </span>
+                    </div>
 
-                    return (
-                      <div 
-                        key={member.id} 
-                        className={`rounded-2xl border bg-slate-900/40 p-4 transition-all duration-300 hover:border-white/15 flex flex-col justify-between ${
-                          report 
-                            ? 'border-white/5 shadow-md' 
-                            : 'border-dashed border-white/5 opacity-55'
-                        }`}
-                        style={report ? { borderLeft: `3px solid ${memberColor}` } : {}}
-                      >
-                        <div>
-                          {/* Card Header */}
-                          <div className="flex items-center justify-between gap-3 mb-3 border-b border-white/5 pb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-black border shrink-0"
-                                style={{ background: `${memberColor}20`, color: memberColor, borderColor: `${memberColor}40` }}>
-                                {member.full_name?.charAt(0)?.toUpperCase() || '?'}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-xs text-white truncate max-w-[120px]">{member.full_name}</div>
-                                <div className="text-[10px] text-slate-500 truncate max-w-[120px]">{member.email}</div>
-                              </div>
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {members.map((member, mIdx) => {
+                        const report = findReport(member.id, selectedFeedDate)
+                        const late = report ? isReportLate(report) : false
+                        const memberColor = MEMBER_COLORS[mIdx % MEMBER_COLORS.length]
 
-                            {/* Status Badge */}
+                        return (
+                          <div 
+                            key={member.id} 
+                            className={`rounded-2xl border bg-slate-900/40 p-4 transition-all duration-300 hover:border-white/15 flex flex-col justify-between ${
+                              report 
+                                ? 'border-white/5 shadow-md' 
+                                : 'border-dashed border-white/5 opacity-55'
+                            }`}
+                            style={report ? { borderLeft: `3px solid ${memberColor}` } : {}}
+                          >
                             <div>
+                              {/* Card Header */}
+                              <div className="flex items-center justify-between gap-3 mb-3 border-b border-white/5 pb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-7 w-7 rounded-full flex items-center justify-center text-[10px] font-black border shrink-0"
+                                    style={{ background: `${memberColor}20`, color: memberColor, borderColor: `${memberColor}40` }}>
+                                    {member.full_name?.charAt(0)?.toUpperCase() || '?'}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-bold text-xs text-white truncate max-w-[120px]">{member.full_name}</div>
+                                    <div className="text-[10px] text-slate-500 truncate max-w-[120px]">{member.email}</div>
+                                  </div>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div>
+                                  {report ? (
+                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
+                                      late 
+                                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
+                                        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                    }`}>
+                                      {late ? <Clock className="h-2.5 w-2.5" /> : <CheckCircle className="h-2.5 w-2.5" />}
+                                      {late ? `Nộp muộn` : `Đúng hạn`}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-900 border border-white/5 text-slate-500 shrink-0">
+                                      Chưa nộp
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Card Body */}
                               {report ? (
-                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
-                                  late 
-                                    ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 
-                                    : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                }`}>
-                                  {late ? <Clock className="h-2.5 w-2.5" /> : <CheckCircle className="h-2.5 w-2.5" />}
-                                  {late ? `Nộp muộn (${formatSubmissionTime(report.created_at)})` : `Đúng hạn (${formatSubmissionTime(report.created_at)})`}
-                                </span>
+                                <div className="space-y-3">
+                                  {/* Today tasks */}
+                                  <div>
+                                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">✅ Công việc hôm nay</h4>
+                                    <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed whitespace-pre-wrap">{report.today_tasks}</p>
+                                  </div>
+
+                                  {/* Highlighted next day plan */}
+                                  <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3 shadow-inner">
+                                    <h4 className="text-[10px] font-black text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                      🔮 Kế hoạch đề xuất ngày mai
+                                    </h4>
+                                    <p className="text-xs text-violet-200 font-medium leading-relaxed whitespace-pre-wrap">{report.next_day_plan}</p>
+                                  </div>
+                                </div>
                               ) : (
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-slate-900 border border-white/5 text-slate-500 shrink-0">
-                                  Chưa nộp
-                                </span>
+                                <div className="flex flex-col items-center justify-center py-6 text-center">
+                                  <Info className="h-5 w-5 text-slate-600 mb-1" />
+                                  <p className="text-xs text-slate-500 italic text-[11px]">Chưa nộp báo cáo ngày này.</p>
+                                </div>
                               )}
                             </div>
+
+                            {/* View full button */}
+                            {report && (
+                              <div className="flex justify-end mt-4 pt-2 border-t border-white/5">
+                                <button
+                                  onClick={() => { setSelectedReport(report); setSelectedMemberName(member.full_name); setIsModalOpen(true) }}
+                                  className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  Xem chi tiết <span className="text-[11px]">→</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
+                        )
+                      })}
+                    </div>
+                  </div>
 
-                          {/* Card Body */}
-                          {report ? (
-                            <div className="space-y-3">
-                              {/* Today tasks */}
-                              <div>
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">✅ Công việc hôm nay</h4>
-                                <p className="text-xs text-slate-200 line-clamp-3 leading-relaxed whitespace-pre-wrap">{report.today_tasks}</p>
-                              </div>
+                  {/* Right Column: Họp nhóm định kỳ (1/3 width, sticky) */}
+                  <div className="space-y-4 lg:sticky lg:top-24 self-start">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users className="h-3.5 w-3.5 text-violet-400" /> Biên bản họp nhóm
+                      </h4>
+                      <Link 
+                        href="/report/group" 
+                        className="text-[10px] text-violet-400 hover:text-violet-300 transition-colors font-bold"
+                      >
+                        Lịch sử họp →
+                      </Link>
+                    </div>
 
-                              {/* Highlighted next day plan */}
-                              <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-3 shadow-inner">
-                                <h4 className="text-[10px] font-black text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                  🔮 Kế hoạch đề xuất ngày mai
-                                </h4>
-                                <p className="text-xs text-violet-200 font-medium leading-relaxed whitespace-pre-wrap">{report.next_day_plan}</p>
-                              </div>
-
-
+                    {(() => {
+                      const dayMeetings = groupMeetings.filter(m => m.meeting_date === selectedFeedDate)
+                      if (dayMeetings.length === 0) {
+                        return (
+                          <div className="bg-slate-900/30 border border-dashed border-white/5 rounded-2xl p-6 text-center text-slate-500 text-xs italic flex flex-col items-center justify-center space-y-3 min-h-[220px]">
+                            <Users className="h-8 w-8 text-slate-700 stroke-[1.5]" />
+                            <div className="space-y-1">
+                              <p className="text-slate-400 font-semibold not-italic">Hôm nay không có họp nhóm</p>
+                              <p className="text-[10px] text-slate-500">Nhóm chưa lập biên bản họp cho ngày này.</p>
                             </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center py-6 text-center">
-                              <Info className="h-5 w-5 text-slate-600 mb-1" />
-                              <p className="text-xs text-slate-500 italic">Thành viên này chưa nộp báo cáo cho ngày đã chọn.</p>
-                            </div>
-                          )}
+                            <Link href="/report/group/new" className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-[10px] rounded-lg transition-all shadow-md cursor-pointer inline-block">
+                              + Lập Biên Bản
+                            </Link>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div className="space-y-4">
+                          {dayMeetings.map(meeting => {
+                            const writer = members.find(m => m.id === meeting.created_by)
+                            return (
+                              <div key={meeting.id} className="relative overflow-hidden bg-gradient-to-b from-violet-950/15 to-violet-950/5 border border-violet-500/20 rounded-2xl p-5 space-y-4 shadow-lg hover:border-violet-500/35 transition-all">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/5 rounded-full blur-xl pointer-events-none" />
+                                
+                                <div className="flex items-center justify-between gap-3 text-xs border-b border-white/5 pb-2.5">
+                                  <span className="flex items-center gap-1 font-bold text-violet-300">
+                                    <Clock className="h-3.5 w-3.5" /> {meeting.meeting_time.substring(0, 5)} ({meeting.duration_minutes} phút)
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">Lập bởi: <span className="font-semibold text-slate-300">{writer?.full_name?.split(' ').pop() || 'Thành viên'}</span></span>
+                                </div>
+
+                                <div className="space-y-3">
+                                  <div>
+                                    <span className="text-[10px] font-bold text-violet-400 uppercase tracking-wider block mb-1">📝 Nội dung trao đổi</span>
+                                    <p className="text-xs text-slate-200 leading-relaxed line-clamp-3 whitespace-pre-wrap">{meeting.content}</p>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-3 pt-1">
+                                    <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl p-2.5">
+                                      <span className="text-[9px] font-bold text-rose-400 uppercase tracking-wider block mb-0.5">⚠️ Khó khăn</span>
+                                      <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-2 whitespace-pre-wrap">{meeting.difficulties || 'Không có'}</p>
+                                    </div>
+                                    <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-2.5">
+                                      <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider block mb-0.5">💡 Giải pháp</span>
+                                      <p className="text-[10px] text-slate-300 leading-relaxed line-clamp-2 whitespace-pre-wrap">{meeting.solutions || 'Không có'}</p>
+                                    </div>
+                                  </div>
+
+                                  {meeting.assignments && meeting.assignments.length > 0 && (
+                                    <div className="bg-slate-950/40 border border-white/5 rounded-xl p-3 space-y-2">
+                                      <span className="text-[9px] font-bold text-violet-400 uppercase tracking-wider block border-b border-white/5 pb-1">🎯 Phân công ({meeting.assignments.length})</span>
+                                      <div className="space-y-2 max-h-[110px] overflow-y-auto pr-1 custom-scrollbar">
+                                        {meeting.assignments.slice(0, 3).map((as: any, idx: number) => {
+                                          const member = members.find(m => m.id === as.user_id)
+                                          const name = member?.full_name || 'Thành viên'
+                                          const memberIndex = members.findIndex(m => m.id === as.user_id)
+                                          const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
+                                          return (
+                                            <div key={idx} className="space-y-0.5">
+                                              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-300">
+                                                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                                <span className="truncate">{name}</span>
+                                              </div>
+                                              <p className="text-[9px] text-slate-400 leading-relaxed pl-3 truncate">{as.task}</p>
+                                            </div>
+                                          )
+                                        })}
+                                        {meeting.assignments.length > 3 && (
+                                          <div className="text-[9px] text-slate-500 text-center italic pt-0.5">
+                                            và {meeting.assignments.length - 3} phân công khác...
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center justify-between gap-2 pt-3 border-t border-white/5 text-xs text-slate-500">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[9px] uppercase font-bold text-slate-500">Tham gia:</span>
+                                    <div className="flex -space-x-1 overflow-hidden">
+                                      {meeting.participants.slice(0, 4).map((pId: string) => {
+                                        const memberIndex = members.findIndex(m => m.id === pId)
+                                        const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
+                                        const initial = members.find(m => m.id === pId)?.full_name?.charAt(0).toUpperCase() || '?'
+                                        return (
+                                          <div 
+                                            key={pId} 
+                                            className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-black text-white border border-slate-900 shadow shrink-0"
+                                            style={{ backgroundColor: color }}
+                                            title={members.find(m => m.id === pId)?.full_name}
+                                          >
+                                            {initial}
+                                          </div>
+                                        )
+                                      })}
+                                      {meeting.participants.length > 4 && (
+                                        <div className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-black text-slate-400 border border-slate-900 bg-slate-800 shadow shrink-0">
+                                          +{meeting.participants.length - 4}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    onClick={() => { setSelectedMeeting(meeting); setIsMeetingModalOpen(true) }}
+                                    className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5 cursor-pointer bg-violet-500/10 border border-violet-500/20 px-2.5 py-1.5 rounded-lg"
+                                  >
+                                    Chi tiết <span className="text-[11px]">→</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
-
-                        {/* View full button */}
-                        {report && (
-                          <div className="flex justify-end mt-4 pt-2 border-t border-white/5">
-                            <button
-                              onClick={() => { setSelectedReport(report); setSelectedMemberName(member.full_name); setIsModalOpen(true) }}
-                              className="text-[10px] font-bold text-violet-400 hover:text-violet-300 transition-colors flex items-center gap-0.5 cursor-pointer"
-                            >
-                              Xem toàn bộ báo cáo <span className="text-[11px]">→</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
+                      )
+                    })()}
+                  </div>
                 </div>
               </div>
 
@@ -697,6 +850,122 @@ export default function DashboardPage() {
               </div>
               <div className="p-4 border-t border-white/5 bg-slate-900/40 flex justify-end">
                 <button onClick={() => setIsModalOpen(false)}
+                  className="bg-white/10 hover:bg-white/15 text-white font-semibold text-sm px-5 py-2 rounded-xl transition-all cursor-pointer border border-white/5">
+                  Đóng lại
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Group Meeting Detail Modal */}
+        {isMeetingModalOpen && selectedMeeting && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm no-print" onClick={() => { setIsMeetingModalOpen(false); setSelectedMeeting(null); }}>
+            <div className="glass-panel w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-white/10 flex flex-col max-h-[90vh]"
+              onClick={e => e.stopPropagation()}>
+              <div className="p-5 border-b border-white/5 flex justify-between items-center bg-slate-900/40">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Biên bản họp nhóm định kỳ</span>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 flex items-center gap-1">
+                      <Clock className="h-2.5 w-2.5" /> {selectedMeeting.meeting_time.substring(0, 5)} ({selectedMeeting.duration_minutes} phút)
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-extrabold text-white mt-1">
+                    Họp Nhóm Tuần - Ngày {new Date(selectedMeeting.meeting_date + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Lập bởi: <span className="font-semibold text-slate-300">{members.find(m => m.id === selectedMeeting.created_by)?.full_name || 'Thành viên'}</span>
+                  </p>
+                </div>
+                <button onClick={() => { setIsMeetingModalOpen(false); setSelectedMeeting(null); }} className="text-slate-400 hover:text-white h-8 w-8 rounded-lg hover:bg-white/10 flex items-center justify-center font-bold transition-colors cursor-pointer">✕</button>
+              </div>
+
+              <div className="p-5 overflow-y-auto space-y-5 flex-1">
+                {/* Participants */}
+                <div>
+                  <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">👥 Thành viên tham gia</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMeeting.participants.map((pId: string) => {
+                      const member = members.find(m => m.id === pId)
+                      const name = member?.full_name || 'Thành viên'
+                      const memberIndex = members.findIndex(m => m.id === pId)
+                      const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
+                      return (
+                        <div key={pId} className="flex items-center gap-1.5 bg-slate-900 border border-white/5 rounded-full pl-1.5 pr-3 py-1 text-xs text-slate-200">
+                          <span className="h-4.5 w-4.5 rounded-full flex items-center justify-center text-[8px] font-black text-white" style={{ backgroundColor: color }}>
+                            {name.charAt(0).toUpperCase()}
+                          </span>
+                          <span className="font-medium">{name}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div>
+                  <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">📝 1. Nội dung trao đổi & Kết quả</h4>
+                  <div className="bg-slate-900/60 rounded-xl p-4 border border-white/5">
+                    <p className="text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">{selectedMeeting.content}</p>
+                  </div>
+                </div>
+
+                {/* Difficulties and Solutions */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider mb-2">⚠️ 2. Khó khăn gặp phải</h4>
+                    <div className="bg-rose-950/5 rounded-xl p-4 border border-rose-500/15 min-h-[100px]">
+                      <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{selectedMeeting.difficulties || 'Không có ghi nhận khó khăn.'}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">💡 3. Giải pháp đề xuất</h4>
+                    <div className="bg-emerald-950/5 rounded-xl p-4 border border-emerald-500/15 min-h-[100px]">
+                      <p className="text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">{selectedMeeting.solutions || 'Không có đề xuất giải pháp mới.'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Task assignments */}
+                {selectedMeeting.assignments && selectedMeeting.assignments.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-2">🎯 4. Phân công công việc tiếp theo</h4>
+                    <div className="bg-slate-900/60 border border-white/5 rounded-xl overflow-hidden">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="border-b border-white/5 bg-slate-950/30">
+                            <th className="py-2.5 px-4 font-bold text-slate-400 w-1/3">Thành viên</th>
+                            <th className="py-2.5 px-4 font-bold text-slate-400">Nhiệm vụ được giao</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedMeeting.assignments.map((as: any, idx: number) => {
+                            const member = members.find(m => m.id === as.user_id)
+                            const name = member?.full_name || 'Thành viên'
+                            const memberIndex = members.findIndex(m => m.id === as.user_id)
+                            const color = memberIndex !== -1 ? MEMBER_COLORS[memberIndex % MEMBER_COLORS.length] : '#8b5cf6'
+                            return (
+                              <tr key={idx} className="border-b border-white/5 last:border-0 hover:bg-white/[0.01]">
+                                <td className="py-3 px-4 font-bold text-slate-200 flex items-center gap-2">
+                                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                                  {name}
+                                </td>
+                                <td className="py-3 px-4 text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                  {as.task}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 border-t border-white/5 bg-slate-900/40 flex justify-end">
+                <button onClick={() => { setIsMeetingModalOpen(false); setSelectedMeeting(null); }}
                   className="bg-white/10 hover:bg-white/15 text-white font-semibold text-sm px-5 py-2 rounded-xl transition-all cursor-pointer border border-white/5">
                   Đóng lại
                 </button>

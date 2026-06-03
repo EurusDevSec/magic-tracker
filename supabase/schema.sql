@@ -108,3 +108,38 @@ CREATE POLICY "Allow users to insert their own gratitude logs"
 CREATE POLICY "Allow users to update their own gratitude logs" 
     ON public.gratitude_logs FOR UPDATE 
     USING (auth.uid() = user_id);
+
+-- 5. Create Group Meetings Table (Weekly logs)
+CREATE TABLE IF NOT EXISTS public.group_meetings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    meeting_date DATE NOT NULL,
+    meeting_time TIME WITHOUT TIME ZONE NOT NULL,
+    duration_minutes INTEGER NOT NULL DEFAULT 30,
+    participants UUID[] NOT NULL,
+    content TEXT NOT NULL,
+    difficulties TEXT NOT NULL,
+    solutions TEXT NOT NULL,
+    assignments JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS on Group Meetings
+ALTER TABLE public.group_meetings ENABLE ROW LEVEL SECURITY;
+
+-- Group Meetings Policies
+CREATE POLICY "Allow authenticated users to read group meetings" 
+    ON public.group_meetings FOR SELECT 
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "Allow authenticated users to insert group meetings" 
+    ON public.group_meetings FOR INSERT 
+    TO authenticated
+    WITH CHECK (auth.uid() = created_by);
+
+CREATE POLICY "Allow creators to update their group meetings" 
+    ON public.group_meetings FOR UPDATE 
+    TO authenticated
+    USING (auth.uid() = created_by);
