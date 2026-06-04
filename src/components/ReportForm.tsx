@@ -15,7 +15,9 @@ import {
   ListTodo,
   AlertTriangle,
   Loader2,
-  Clock
+  Clock,
+  Image,
+  X
 } from 'lucide-react'
 
 const DRAFT_KEY = 'eti-report-draft'
@@ -31,6 +33,81 @@ export default function ReportForm() {
   const [lessonsLearned, setLessonsLearned] = useState('')
   const [problemsAndSolutions, setProblemsAndSolutions] = useState('')
   const [nextDayPlan, setNextDayPlan] = useState('')
+  const [attachments, setAttachments] = useState<string[]>([])
+  const [compressing, setCompressing] = useState(false)
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const fileList = Array.from(files)
+    if (attachments.length + fileList.length > 5) {
+      alert('Bạn chỉ được phép đính kèm tối đa 5 ảnh minh chứng!')
+      return
+    }
+
+    setCompressing(true)
+    let processedCount = 0
+
+    fileList.forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`Tệp "${file.name}" không phải là ảnh hợp lệ!`)
+        processedCount++
+        if (processedCount === fileList.length) setCompressing(false)
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const img = new window.Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_SIZE = 1024
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width
+              width = MAX_SIZE
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height
+              height = MAX_SIZE
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7)
+            setAttachments(prev => {
+              if (prev.length < 5) {
+                return [...prev, compressedBase64]
+              }
+              return prev
+            })
+          }
+          processedCount++
+          if (processedCount === fileList.length) {
+            setCompressing(false)
+          }
+        }
+        img.src = event.target?.result as string
+      }
+      reader.readAsDataURL(file)
+    })
+    
+    e.target.value = ''
+  }
+
+  const removeAttachment = (indexToRemove: number) => {
+    setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove))
+  }
   
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -67,6 +144,7 @@ export default function ReportForm() {
           setLessonsLearned(data.lessons_learned || '')
           setProblemsAndSolutions(data.problems_and_solutions || '')
           setNextDayPlan(data.next_day_plan)
+          setAttachments(data.attachments || [])
         } else {
           // If no existing report, load draft from localStorage
           const savedDraft = localStorage.getItem(DRAFT_KEY)
@@ -77,6 +155,7 @@ export default function ReportForm() {
               setLessonsLearned(parsed.lessonsLearned || '')
               setProblemsAndSolutions(parsed.problemsAndSolutions || '')
               setNextDayPlan(parsed.nextDayPlan || '')
+              setAttachments(parsed.attachments || [])
             } catch (e) {
               console.error('Error parsing draft', e)
             }
@@ -100,10 +179,11 @@ export default function ReportForm() {
       todayTasks,
       lessonsLearned,
       problemsAndSolutions,
-      nextDayPlan
+      nextDayPlan,
+      attachments
     }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-  }, [todayTasks, lessonsLearned, problemsAndSolutions, nextDayPlan, existingReportId, loading])
+  }, [todayTasks, lessonsLearned, problemsAndSolutions, nextDayPlan, attachments, existingReportId, loading])
 
   const handleNext = () => {
     if (currentStep < 5) setCurrentStep(currentStep + 1)
@@ -140,6 +220,7 @@ export default function ReportForm() {
       lessons_learned: lessonsLearned || null,
       problems_and_solutions: problemsAndSolutions || null,
       next_day_plan: nextDayPlan,
+      attachments: attachments,
       updated_at: new Date().toISOString()
     }
 
@@ -307,18 +388,75 @@ export default function ReportForm() {
 
           {/* Step Fields */}
           {currentStep === 1 && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-300">
-                Hôm nay bạn đã làm được những gì? <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={todayTasks}
-                onChange={(e) => setTodayTasks(e.target.value)}
-                placeholder="Ví dụ:&#13;• Thiết kế database schema và các API routes.&#13;• Viết tài liệu API cho frontend.&#13;• Sửa lỗi hiển thị UI trên các thiết bị di động."
-                rows={8}
-                className="glass-input block w-full rounded-xl p-4 text-sm focus:outline-none"
-              />
-              <p className="text-xs text-slate-500">Nên viết dưới dạng gạch đầu dòng rõ ràng để dễ theo dõi.</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-300">
+                  Hôm nay bạn đã làm được những gì? <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  value={todayTasks}
+                  onChange={(e) => setTodayTasks(e.target.value)}
+                  placeholder="Ví dụ:&#13;• Thiết kế database schema và các API routes.&#13;• Viết tài liệu API cho frontend.&#13;• Sửa lỗi hiển thị UI trên các thiết bị di động."
+                  rows={8}
+                  className="glass-input block w-full rounded-xl p-4 text-sm focus:outline-none"
+                />
+                <p className="text-xs text-slate-500">Nên viết dưới dạng gạch đầu dòng rõ ràng để dễ theo dõi.</p>
+              </div>
+
+              {/* Upload screenshots */}
+              <div className="space-y-3 pt-2">
+                <label className="block text-sm font-semibold text-slate-300">
+                  Ảnh minh chứng kết quả (Chụp màn hình - Tối đa 5 ảnh):
+                </label>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {attachments.map((base64, index) => (
+                    <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-inner">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img 
+                        src={base64} 
+                        alt={`Attachment ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center border border-rose-500 shadow-md transition-all scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 cursor-pointer"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 py-0.5 text-[9px] text-center text-slate-300 font-bold opacity-60">
+                        Ảnh {index + 1}
+                      </div>
+                    </div>
+                  ))}
+
+                  {attachments.length < 5 && (
+                    <label className="relative aspect-square rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/50 bg-slate-900/50 hover:bg-violet-950/10 flex flex-col items-center justify-center gap-1.5 text-center p-3 transition-all cursor-pointer group">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={compressing}
+                      />
+                      {compressing ? (
+                        <>
+                          <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
+                          <span className="text-[10px] text-slate-500 font-bold">Đang nén...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Image className="h-6 w-6 text-slate-400 group-hover:text-violet-400 transition-colors" />
+                          <span className="text-[10px] text-slate-400 group-hover:text-violet-300 font-bold transition-colors">Tải ảnh lên</span>
+                          <span className="text-[9px] text-slate-500">Còn lại: {5 - attachments.length}</span>
+                        </>
+                      )}
+                    </label>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -388,6 +526,23 @@ export default function ReportForm() {
                   <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wider">4. Ngày mai làm gì</h4>
                   <p className="text-sm text-slate-200 mt-1 whitespace-pre-wrap">{nextDayPlan || <span className="text-rose-400 italic">Trống</span>}</p>
                 </div>
+                {attachments.length > 0 && (
+                  <div className="border-t border-white/5 pt-3">
+                    <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wider mb-2">5. Ảnh minh chứng ({attachments.length} ảnh)</h4>
+                    <div className="flex flex-wrap gap-2.5">
+                      {attachments.map((base64, idx) => (
+                        <div key={idx} className="h-16 w-24 rounded-lg overflow-hidden border border-white/10 shadow-sm shrink-0 bg-slate-900">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={base64} 
+                            alt={`Preview ${idx + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

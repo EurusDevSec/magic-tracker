@@ -21,6 +21,7 @@ type Report = {
   id: string; user_id: string; report_date: string
   today_tasks: string; lessons_learned: string | null
   problems_and_solutions: string | null; next_day_plan: string
+  attachments?: string[] | null
   created_at: string
   updated_at: string
 }
@@ -101,6 +102,8 @@ export default function DashboardPage() {
   const [groupMeetings, setGroupMeetings] = useState<any[]>([])
   const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null)
   const [isMeetingModalOpen, setIsMeetingModalOpen] = useState(false)
+  const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0)
   
 
   const isReportLate = (report: any) => {
@@ -518,6 +521,46 @@ export default function DashboardPage() {
                                     <p className="text-[13px] text-slate-100 line-clamp-3 leading-relaxed whitespace-pre-wrap font-normal">{report.today_tasks}</p>
                                   </div>
 
+                                  {/* Collage of screenshots */}
+                                  {report.attachments && report.attachments.length > 0 && (
+                                    <div className="space-y-1.5 pt-1.5">
+                                      <h4 className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider mb-1">📸 Ảnh minh chứng</h4>
+                                      <div className={`grid gap-1.5 rounded-xl overflow-hidden border border-white/5 bg-slate-950/50 p-1.5 ${
+                                        report.attachments.length === 1 ? 'grid-cols-1' :
+                                        report.attachments.length === 2 ? 'grid-cols-2' :
+                                        'grid-cols-3'
+                                      }`}>
+                                        {report.attachments.slice(0, 3).map((img, idx) => {
+                                          const isLast = idx === 2 && report.attachments!.length > 3
+                                          const extraCount = report.attachments!.length - 3
+                                          return (
+                                            <div 
+                                              key={idx} 
+                                              className="relative aspect-[4/3] rounded-lg overflow-hidden group cursor-zoom-in"
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                setLightboxImages(report.attachments!)
+                                                setLightboxIndex(idx)
+                                              }}
+                                            >
+                                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                                              <img 
+                                                src={img} 
+                                                alt={`Minh chứng ${idx + 1}`}
+                                                className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                              />
+                                              {isLast && (
+                                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center text-white font-black text-sm">
+                                                  +{extraCount} ảnh
+                                                </div>
+                                              )}
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {/* Highlighted next day plan */}
                                   <div className="bg-violet-950/35 border border-violet-500/25 rounded-xl p-3 shadow-inner">
                                     <h4 className="text-[10.5px] font-black text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1">
@@ -851,6 +894,34 @@ export default function DashboardPage() {
                     </div>
                   ) : null
                 ))}
+
+                {selectedReport.attachments && selectedReport.attachments.length > 0 && (
+                  <div className="border-t border-white/5 pt-4">
+                    <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider mb-3">📸 Ảnh minh chứng kết quả ({selectedReport.attachments.length})</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {selectedReport.attachments.map((img, idx) => (
+                        <div 
+                          key={idx} 
+                          className="relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-md group cursor-zoom-in"
+                          onClick={() => {
+                            setLightboxImages(selectedReport.attachments!)
+                            setLightboxIndex(idx)
+                          }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={img} 
+                            alt={`Minh chứng ${idx + 1}`}
+                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute bottom-0 inset-x-0 bg-black/60 py-1 text-[10px] text-center text-slate-300 font-medium">
+                            Ảnh {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="p-4 border-t border-white/5 bg-slate-900/40 flex justify-end">
                 <button onClick={() => setIsModalOpen(false)}
@@ -976,6 +1047,64 @@ export default function DashboardPage() {
                   className="bg-white/10 hover:bg-white/15 text-white font-semibold text-sm px-5 py-2 rounded-xl transition-all cursor-pointer border border-white/5">
                   Đóng lại
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lightbox Modal */}
+        {lightboxImages && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md no-print" 
+            onClick={() => setLightboxImages(null)}
+          >
+            {/* Close button */}
+            <button 
+              onClick={() => setLightboxImages(null)} 
+              className="absolute top-5 right-5 text-slate-400 hover:text-white h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-xl transition-all cursor-pointer z-10 animate-fadeIn"
+            >
+              ✕
+            </button>
+
+            {/* Prev button */}
+            {lightboxIndex > 0 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex(prev => prev - 1)
+                }} 
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Next button */}
+            {lightboxIndex < lightboxImages.length - 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex(prev => prev + 1)
+                }} 
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
+              >
+                ›
+              </button>
+            )}
+
+            {/* Main Image Container */}
+            <div 
+              className="relative max-w-5xl max-h-[85vh] flex flex-col items-center justify-center animate-scaleUp"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={lightboxImages[lightboxIndex]} 
+                alt={`Image detail ${lightboxIndex + 1}`}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg border border-white/10 shadow-2xl"
+              />
+              <div className="text-xs text-slate-400 font-semibold mt-4 bg-slate-900/80 px-4 py-1.5 rounded-full border border-white/5">
+                Ảnh {lightboxIndex + 1} / {lightboxImages.length}
               </div>
             </div>
           </div>

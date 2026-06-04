@@ -16,7 +16,8 @@ import {
   Loader2,
   FileText,
   Plus,
-  Clock
+  Clock,
+  Image
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -27,6 +28,7 @@ type Report = {
   lessons_learned: string | null
   problems_and_solutions: string | null
   next_day_plan: string
+  attachments?: string[] | null
   created_at: string
 }
 
@@ -37,6 +39,8 @@ export default function ReportHistoryPage() {
   const [reports, setReports] = useState<Report[]>([])
   const [fetching, setFetching] = useState(true)
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
+  const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0)
 
   const isReportLate = (utcStr: string) => {
     if (!utcStr) return false
@@ -259,6 +263,34 @@ export default function ReportHistoryPage() {
                         </div>
                       </div>
 
+                      {/* 5. Screenshot Evidences */}
+                      {report.attachments && report.attachments.length > 0 && (
+                        <div className="space-y-2 border-t border-white/5 pt-4">
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-violet-300">
+                            <Image className="h-4 w-4 text-violet-400" /> Ảnh minh chứng kết quả ({report.attachments.length})
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 ml-6">
+                            {report.attachments.map((img, idx) => (
+                              <div 
+                                key={idx} 
+                                className="relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-md group cursor-zoom-in"
+                                onClick={() => {
+                                  setLightboxImages(report.attachments!)
+                                  setLightboxIndex(idx)
+                                }}
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img 
+                                  src={img} 
+                                  alt={`Minh chứng ${idx + 1}`}
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Edit Button */}
                       {today && (
                         <div className="flex justify-end border-t border-white/5 pt-4">
@@ -275,6 +307,63 @@ export default function ReportHistoryPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+        {/* Lightbox Modal */}
+        {lightboxImages && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md no-print" 
+            onClick={() => setLightboxImages(null)}
+          >
+            {/* Close button */}
+            <button 
+              onClick={() => setLightboxImages(null)} 
+              className="absolute top-5 right-5 text-slate-400 hover:text-white h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-xl transition-all cursor-pointer z-10 animate-fadeIn"
+            >
+              ✕
+            </button>
+
+            {/* Prev button */}
+            {lightboxIndex > 0 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex(prev => prev - 1)
+                }} 
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Next button */}
+            {lightboxIndex < lightboxImages.length - 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex(prev => prev + 1)
+                }} 
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
+              >
+                ›
+              </button>
+            )}
+
+            {/* Main Image Container */}
+            <div 
+              className="relative max-w-5xl max-h-[85vh] flex flex-col items-center justify-center animate-scaleUp"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={lightboxImages[lightboxIndex]} 
+                alt={`Image detail ${lightboxIndex + 1}`}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg border border-white/10 shadow-2xl"
+              />
+              <div className="text-xs text-slate-400 font-semibold mt-4 bg-slate-900/80 px-4 py-1.5 rounded-full border border-white/5">
+                Ảnh {lightboxIndex + 1} / {lightboxImages.length}
+              </div>
+            </div>
           </div>
         )}
         </div>

@@ -115,6 +115,12 @@ export const initializeMockData = () => {
     ]
   };
 
+  const mockImage1 = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="url(%23g1)"/><defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%238b5cf6"/><stop offset="100%" style="stop-color:%2306b6d4"/></linearGradient></defs><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="sans-serif" font-size="20" font-weight="bold">Dashboard UI/UX Wireframe</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="sans-serif" font-size="14">Minh chứng hoàn thành cắt HTML/CSS cho ETI Tracker</text></svg>`;
+  
+  const mockImage2 = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="url(%23g2)"/><defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%23f59e0b"/><stop offset="100%" style="stop-color:%23ef4444"/></linearGradient></defs><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="sans-serif" font-size="20" font-weight="bold">Sepay Webhook Payment API Log</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="sans-serif" font-size="14">Trạng thái giao dịch tự động thành công (Code 200 OK)</text></svg>`;
+
+  const mockImage3 = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="100%" height="100%" fill="url(%23g3)"/><defs><linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%2310b981"/><stop offset="100%" style="stop-color:%23047857"/></linearGradient></defs><text x="50%" y="45%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="sans-serif" font-size="20" font-weight="bold">aaPanel VPS Ubuntu Server Setup</text><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="sans-serif" font-size="14">Cấu hình hoàn tất cổng DNS, Cloudflare Tunnel bảo mật</text></svg>`;
+
   datesList.forEach((dateStr, index) => {
     const isToday = index === 0;
 
@@ -130,6 +136,7 @@ export const initializeMockData = () => {
       lessons_learned: 'Học cách làm việc với các hệ thống Linux, các lệnh shell cơ bản.',
       problems_and_solutions: 'Bị lỗi permission ghi file -> Giải pháp: chmod 755.',
       next_day_plan: tienTask.next,
+      attachments: index % 2 === 0 ? [mockImage3] : [],
       created_at: tienCreated.toISOString(),
       updated_at: tienCreated.toISOString()
     });
@@ -146,6 +153,7 @@ export const initializeMockData = () => {
       lessons_learned: 'Đúc kết bài học về quản lý vòng đời bộ nhớ trong Node.js.',
       problems_and_solutions: 'Memory leak -> Cách giải quyết: dùng profile heapdump.',
       next_day_plan: hoangTask.next,
+      attachments: index % 3 === 0 ? [mockImage2, mockImage1] : [],
       created_at: hoangCreated.toISOString(),
       updated_at: hoangCreated.toISOString()
     });
@@ -163,6 +171,7 @@ export const initializeMockData = () => {
         lessons_learned: 'Nắm vững các thuộc tính CSS Flexbox và Grid nâng cao.',
         problems_and_solutions: 'Trình duyệt safari bị vỡ layout -> Fix bằng autoprefixer.',
         next_day_plan: linhTask.next,
+        attachments: index % 2 === 1 ? [mockImage1] : [],
         created_at: linhCreated.toISOString(),
         updated_at: linhCreated.toISOString()
       });
