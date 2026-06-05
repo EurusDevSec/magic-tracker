@@ -15,14 +15,18 @@ CREATE TABLE IF NOT EXISTS public.boss_meetings (
 
 ALTER TABLE public.boss_meetings ENABLE ROW LEVEL SECURITY;
 
+-- Xóa policy cũ nếu đã tồn tại để tránh lỗi trùng lặp khi chạy lại script
+DROP POLICY IF EXISTS "boss_meetings_select" ON public.boss_meetings;
 CREATE POLICY "boss_meetings_select" ON public.boss_meetings FOR
 SELECT USING (auth.uid () IS NOT NULL);
 
+DROP POLICY IF EXISTS "boss_meetings_insert" ON public.boss_meetings;
 CREATE POLICY "boss_meetings_insert" ON public.boss_meetings FOR
 INSERT
 WITH
     CHECK (auth.uid () IS NOT NULL);
 
+DROP POLICY IF EXISTS "boss_meetings_update" ON public.boss_meetings;
 -- Mọi user đều có thể sửa để cùng đóng góp nội dung
 CREATE POLICY "boss_meetings_update" ON public.boss_meetings FOR
 UPDATE USING (auth.uid () IS NOT NULL);
@@ -40,14 +44,18 @@ CREATE TABLE IF NOT EXISTS public.boss_lessons (
 
 ALTER TABLE public.boss_lessons ENABLE ROW LEVEL SECURITY;
 
+-- Xóa policy cũ nếu đã tồn tại để tránh lỗi trùng lặp khi chạy lại script
+DROP POLICY IF EXISTS "boss_lessons_select" ON public.boss_lessons;
 CREATE POLICY "boss_lessons_select" ON public.boss_lessons FOR
 SELECT USING (auth.uid () IS NOT NULL);
 
+DROP POLICY IF EXISTS "boss_lessons_insert" ON public.boss_lessons;
 CREATE POLICY "boss_lessons_insert" ON public.boss_lessons FOR
 INSERT
 WITH
     CHECK (auth.uid () IS NOT NULL);
 
+DROP POLICY IF EXISTS "boss_lessons_update" ON public.boss_lessons;
 CREATE POLICY "boss_lessons_update" ON public.boss_lessons FOR
 UPDATE USING (
     auth.uid () = created_by
