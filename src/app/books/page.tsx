@@ -11,6 +11,7 @@ import imgBuoiSang from './buoisangdieuki.jpg'
 import imgBiMat from './bimatcuamayman.png'
 import imgNhaGiaKim from './nhagiakim.jpg'
 import imgNguoiGiau from './nguiogiauthanhbabylon.jpg'
+import imgThinkGrow from './thinkandgrowrich.png'
 
 type Book = {
   title: string
@@ -76,7 +77,7 @@ const BOOKS: Book[] = [
     author: 'Napoleon Hill',
     reason: 'Kinh thánh về tư duy thịnh vượng — đã thay đổi hàng triệu cuộc đời.',
     lesson: 'Tư duy là nền tảng của mọi thành công. 13 nguyên tắc làm giàu từ việc nghiên cứu 500 người thành công nhất nước Mỹ.',
-    coverImage: null,
+    coverImage: imgThinkGrow,
     coverGradient: 'linear-gradient(135deg, #0c4a6e 0%, #0284c7 40%, #0ea5e9 70%, #38bdf8 100%)',
     glowColor: 'rgba(2, 132, 199, 0.45)',
     textColor: 'text-sky-300',
@@ -251,17 +252,21 @@ export default function BooksPage() {
           </div>
 
           {/* 3D Book Shelf */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-end pb-2">
+          <div className="relative">
+            {/* Ambient shelf glow — subtle top light */}
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-3/4 h-16 bg-violet-500/5 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 items-end pb-2">
             {BOOKS.map((book, i) => (
               <div
                 key={i}
                 onClick={() => setOpenBook(book)}
                 className="group cursor-pointer flex flex-col items-center"
-                style={{ perspective: '600px' }}
+                style={{ perspective: '600px', transitionDelay: `${i * 30}ms` }}
               >
                 {/* 3D Book wrapper */}
                 <div
-                  className="relative w-full transition-all duration-300 group-hover:-translate-y-4"
+                  className="relative w-full transition-all duration-500 ease-out group-hover:-translate-y-4 group-hover:scale-[1.03]"
                   style={{ transformStyle: 'preserve-3d' }}
                 >
                   {/* Cover face */}
@@ -272,7 +277,8 @@ export default function BooksPage() {
                       borderRadius: '0 6px 6px 0',
                       transform: 'rotateY(-10deg)',
                       transformOrigin: 'left center',
-                      boxShadow: `5px 8px 24px ${book.glowColor}, 2px 2px 0 rgba(0,0,0,0.5)`,
+                      boxShadow: `5px 10px 28px ${book.glowColor}, 3px 3px 0 rgba(0,0,0,0.6)`,
+                      transition: 'box-shadow 0.5s ease',
                     }}
                   >
                     {book.coverImage ? (
@@ -281,11 +287,14 @@ export default function BooksPage() {
                           src={book.coverImage}
                           alt={book.title}
                           fill
-                          className="object-cover object-center"
+                          className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                           sizes="180px"
                         />
-                        {/* Slight gloss overlay on real images */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/25 pointer-events-none" />
+                        {/* Gloss overlay — subtle shine from top-left */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/12 via-transparent to-black/30 pointer-events-none" />
+                        {/* Hover shimmer strip */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                          style={{ background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.08) 50%, transparent 70%)' }} />
                       </>
                     ) : (
                       <>
@@ -337,12 +346,17 @@ export default function BooksPage() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>{/* end grid */}
+          </div>{/* end relative shelf */}
 
-          {/* Shelf base */}
+          {/* Shelf ledge */}
           <div className="relative -mt-1">
-            <div className="h-0.5 bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-            <div className="h-4 bg-gradient-to-b from-white/5 to-transparent rounded-b-sm" />
+            {/* Main ledge line */}
+            <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            {/* Ledge depth */}
+            <div className="h-3 bg-gradient-to-b from-white/8 via-white/4 to-transparent" />
+            {/* Soft shadow below ledge */}
+            <div className="h-6 bg-gradient-to-b from-black/20 to-transparent" />
           </div>
 
           <div className="text-center pb-8">
