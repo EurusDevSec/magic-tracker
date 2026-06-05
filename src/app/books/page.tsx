@@ -11,7 +11,7 @@ import imgBuoiSang from './buoisangdieuki.jpg'
 import imgBiMat from './bimatcuamayman.png'
 import imgNhaGiaKim from './nhagiakim.jpg'
 import imgNguoiGiau from './nguiogiauthanhbabylon.jpg'
-import imgThinkGrow from './thinkandgrowrich.png'
+import imgThinkGrow from './think_and_grow_rich___nghi_giau_va_lam_giau_phien_ban_dac_biet_bia_cung_1_2021_06_21_08_44_11.jpg'
 
 type Book = {
   title: string
