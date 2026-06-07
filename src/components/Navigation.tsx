@@ -8,7 +8,7 @@ import UserAvatar from '@/components/UserAvatar'
 import {
   Calendar, History, BarChart2,
   Heart, LogOut, User as UserIcon, Users,
-  ChevronLeft, ChevronRight, Presentation, Sparkles, BookOpen
+  ChevronLeft, ChevronRight, BookOpen
 } from 'lucide-react'
 
 export default function Navigation() {
@@ -37,7 +37,6 @@ export default function Navigation() {
     { href: '/report', label: 'Báo cáo tiến độ', icon: Calendar },
     { href: '/report/history', label: 'Lịch sử báo cáo', icon: History },
     { href: '/report/group', label: 'Họp nhóm định kỳ', icon: Users },
-    { href: '/lessons', label: 'Bản đồ Tư duy', icon: Sparkles },
     { href: '/books', label: 'Tủ sách nội lực', icon: BookOpen },
     { href: '/magic', label: '28 Ngày Biết Ơn', icon: Heart, magic: true },
     { href: '/profile', label: 'Trang cá nhân', icon: UserIcon },
