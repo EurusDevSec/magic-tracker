@@ -8,7 +8,8 @@ import Navigation from '@/components/Navigation'
 import UserAvatar from '@/components/UserAvatar'
 import { 
   Users, Calendar, Clock, BookOpen, AlertTriangle, 
-  Lightbulb, ClipboardList, ChevronLeft, ChevronRight, Save, Loader2 
+  Lightbulb, ClipboardList, ChevronLeft, ChevronRight, Save, Loader2,
+  Image, X
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -22,6 +23,8 @@ export default function NewGroupMeetingPage() {
 
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [fetchingProfiles, setFetchingProfiles] = useState(true)
+  const [fetchingMeeting, setFetchingMeeting] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
 
   // Step state
   const [currentStep, setCurrentStep] = useState(1)
@@ -35,6 +38,8 @@ export default function NewGroupMeetingPage() {
   const [content, setContent] = useState('')
   const [difficulties, setDifficulties] = useState('')
   const [solutions, setSolutions] = useState('')
+  const [attachments, setAttachments] = useState<string[]>([])
+  const [compressing, setCompressing] = useState(false)
   
   const [assignments, setAssignments] = useState<Assignment[]>([])
 
@@ -46,10 +51,23 @@ export default function NewGroupMeetingPage() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
+  // Get edit parameter on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      setEditId(params.get('edit'))
+    }
+  }, [])
+
   // Set default date to today
   useEffect(() => {
-    const todayStr = new Date().toLocaleDateString('en-CA')
-    setMeetingDate(todayStr)
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      if (!urlParams.get('edit')) {
+        const todayStr = new Date().toLocaleDateString('en-CA')
+        setMeetingDate(todayStr)
+      }
+    }
   }, [])
 
   // Fetch profiles for participant checklist
@@ -63,7 +81,10 @@ export default function NewGroupMeetingPage() {
         setProfiles(data || [])
         
         // Auto-select current user as participant
-        setSelectedParticipants([user.id])
+        const urlParams = new URLSearchParams(window.location.search)
+        if (!urlParams.get('edit')) {
+          setSelectedParticipants([user.id])
+        }
       } catch (err) {
         console.error('Error fetching profiles:', err)
       } finally {
@@ -74,27 +95,136 @@ export default function NewGroupMeetingPage() {
     fetchProfiles()
   }, [user, supabase])
 
+  // Fetch meeting for edit
+  useEffect(() => {
+    if (!editId || !user) return
+
+    const fetchMeeting = async () => {
+      setFetchingMeeting(true)
+      try {
+        const { data, error } = await supabase
+          .from('group_meetings')
+          .select('*')
+          .eq('id', editId)
+          .single()
+
+        if (error) throw error
+        if (data) {
+          if (data.created_by !== user.id) {
+            setErrorMsg('Bạn không có quyền chỉnh sửa ghi chép họp nhóm này.')
+            return
+          }
+          
+          setMeetingDate(data.meeting_date)
+          setMeetingTime(data.meeting_time ? data.meeting_time.substring(0, 5) : '19:00')
+          setDuration(data.duration_minutes)
+          setSelectedParticipants(data.participants || [])
+          setContent(data.content)
+          setDifficulties(data.difficulties)
+          setSolutions(data.solutions)
+          setAssignments(data.assignments || [])
+          setAttachments(data.attachments || [])
+        }
+      } catch (err) {
+        console.error('Error fetching meeting:', err)
+        setErrorMsg('Lỗi khi tải thông tin buổi họp.')
+      } finally {
+        setFetchingMeeting(false)
+      }
+    }
+
+    fetchMeeting()
+  }, [editId, user, supabase])
+
   // Sync assignments array when selectedParticipants changes
   useEffect(() => {
     setAssignments(prev => {
-      // Keep existing assignments if they are still selected
       const filtered = prev.filter(a => selectedParticipants.includes(a.user_id))
-      
-      // Add new blank assignments for newly selected members
       selectedParticipants.forEach(pId => {
         if (!filtered.some(a => a.user_id === pId)) {
           filtered.push({ user_id: pId, task: '' })
         }
       })
-
       return filtered
     })
   }, [selectedParticipants])
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const fileList = Array.from(files)
+    if (attachments.length + fileList.length > 5) {
+      alert('Bạn chỉ được phép đính kèm tối đa 5 ảnh minh chứng!')
+      return
+    }
+
+    setCompressing(true)
+    let processedCount = 0
+
+    fileList.forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        alert(`Tệp "${file.name}" không phải là ảnh hợp lệ!`)
+        processedCount++
+        if (processedCount === fileList.length) setCompressing(false)
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const img = new window.Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const MAX_SIZE = 1024
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width
+              width = MAX_SIZE
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height
+              height = MAX_SIZE
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7)
+            setAttachments(prev => {
+              if (prev.length < 5) {
+                return [...prev, compressedBase64]
+              }
+              return prev
+            })
+          }
+          processedCount++
+          if (processedCount === fileList.length) {
+            setCompressing(false)
+          }
+        }
+        img.src = event.target?.result as string
+      }
+      reader.readAsDataURL(file)
+    })
+    
+    e.target.value = ''
+  }
+
+  const removeAttachment = (indexToRemove: number) => {
+    setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove))
+  }
+
   const handleParticipantToggle = (id: string) => {
     setSelectedParticipants(prev => {
       if (prev.includes(id)) {
-        // Keep at least one participant (the logged-in user or others)
         return prev.filter(pId => pId !== id)
       } else {
         return [...prev, id]
@@ -118,7 +248,7 @@ export default function NewGroupMeetingPage() {
         return
       }
       if (selectedParticipants.length < 2) {
-        setErrorMsg('Biên bản họp nhóm yêu cầu tối thiểu phải có 2 thành viên tham dự.')
+        setErrorMsg('Ghi chép họp nhóm yêu cầu tối thiểu phải có 2 thành viên tham dự.')
         return
       }
     } else if (currentStep === 2) {
@@ -160,21 +290,33 @@ export default function NewGroupMeetingPage() {
 
     const payload = {
       meeting_date: meetingDate,
-      meeting_time: meetingTime + ':00',
+      meeting_time: meetingTime + (meetingTime.length === 5 ? ':00' : ''),
       duration_minutes: Number(duration),
       participants: selectedParticipants,
       content: content.trim(),
       difficulties: difficulties.trim(),
       solutions: solutions.trim(),
       assignments: assignments.map(a => ({ user_id: a.user_id, task: a.task.trim() })),
+      attachments: attachments,
       created_by: user.id
     }
 
     try {
-      const { error } = await supabase.from('group_meetings').insert([payload])
-      if (error) throw error
+      if (editId) {
+        const { error } = await supabase
+          .from('group_meetings')
+          .update(payload)
+          .eq('id', editId)
+        if (error) throw error
+        setSuccessMsg('Đã cập nhật ghi chép họp nhóm thành công!')
+      } else {
+        const { error } = await supabase
+          .from('group_meetings')
+          .insert([payload])
+        if (error) throw error
+        setSuccessMsg('Đã đăng ghi chép họp nhóm thành công!')
+      }
 
-      setSuccessMsg('Đã đăng biên bản họp nhóm thành công!')
       window.scrollTo({ top: 0, behavior: 'smooth' })
       
       setTimeout(() => {
@@ -182,7 +324,7 @@ export default function NewGroupMeetingPage() {
       }, 1500)
     } catch (err: any) {
       console.error(err)
-      setErrorMsg(err.message || 'Lỗi khi lưu biên bản họp nhóm.')
+      setErrorMsg(err.message || 'Lỗi khi lưu ghi chép họp nhóm.')
       setSubmitting(false)
     }
   }
@@ -220,8 +362,8 @@ export default function NewGroupMeetingPage() {
             <ChevronLeft className="h-6 w-6" />
           </Link>
           <div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Lập Biên Bản Họp Nhóm mới</h1>
-            <p className="text-slate-400 text-sm mt-0.5">Biên bản sẽ được hiển thị công khai trên bảng tin chung.</p>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">{editId ? 'Chỉnh sửa Ghi chép Họp Nhóm' : 'Tạo Ghi chép Họp Nhóm mới'}</h1>
+            <p className="text-slate-400 text-sm mt-0.5">Ghi chép họp nhóm sẽ được hiển thị công khai trên bảng tin chung.</p>
           </div>
         </div>
 
@@ -385,6 +527,51 @@ export default function NewGroupMeetingPage() {
                       className="glass-input block w-full rounded-xl p-4 text-sm focus:outline-none"
                     />
                   </div>
+
+                  {/* Image upload section (attachments) */}
+                  <div className="space-y-2 border-t border-white/5 pt-4">
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1">
+                      <Image className="h-3.5 w-3.5 text-violet-400" /> Ảnh minh chứng cuộc họp (Tối đa 5 ảnh)
+                    </label>
+                    <p className="text-[10px] text-slate-500">Đính kèm các ảnh chụp màn hình cuộc họp Zoom, Discord, Google Meet...</p>
+                    
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      {attachments.map((img, idx) => (
+                        <div key={idx} className="relative h-20 w-20 rounded-xl overflow-hidden border border-white/10 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={img} alt={`Minh chứng ${idx + 1}`} className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(idx)}
+                            className="absolute top-1 right-1 bg-black/60 hover:bg-rose-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ))}
+
+                      {attachments.length < 5 && (
+                        <label className="h-20 w-20 rounded-xl border border-dashed border-white/20 hover:border-violet-500/50 hover:bg-violet-500/5 transition-all flex flex-col items-center justify-center cursor-pointer gap-1 text-slate-500 hover:text-slate-300">
+                          {compressing ? (
+                            <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
+                          ) : (
+                            <>
+                              <Image className="h-5 w-5" />
+                              <span className="text-[9px] font-bold uppercase">Tải ảnh</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            disabled={compressing}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -451,7 +638,7 @@ export default function NewGroupMeetingPage() {
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4" /> Đăng biên bản
+                      <Save className="h-4 w-4" /> {editId ? 'Cập nhật ghi chép' : 'Đăng ghi chép'}
                     </>
                   )}
                 </button>

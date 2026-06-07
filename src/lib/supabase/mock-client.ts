@@ -240,6 +240,7 @@ export const initializeMockData = () => {
         { user_id: 'user-hoang', task: 'Xử lý webhook Sepay thanh toán tự động và viết API log.' },
         { user_id: 'user-linh', task: 'Thiết kế chi tiết trang Login, Register và hoàn thiện biểu đồ Recharts.' }
       ],
+      attachments: [],
       created_by: 'user-tien',
       created_at: new Date(datesList[4] + 'T20:00:00').toISOString(),
       updated_at: new Date(datesList[4] + 'T20:00:00').toISOString()
@@ -258,6 +259,7 @@ export const initializeMockData = () => {
         { user_id: 'user-hoang', task: 'Viết test cases và chạy thử nghiệm thanh toán tự động.' },
         { user_id: 'user-linh', task: 'Hoàn thiện luồng kiểm thử giao diện người dùng (UX flow).' }
       ],
+      attachments: [],
       created_by: 'user-hoang',
       created_at: new Date(datesList[1] + 'T20:30:00').toISOString(),
       updated_at: new Date(datesList[1] + 'T20:30:00').toISOString()

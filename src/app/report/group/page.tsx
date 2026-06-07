@@ -8,7 +8,7 @@ import Navigation from '@/components/Navigation'
 import UserAvatar from '@/components/UserAvatar'
 import { 
   Users, Plus, Calendar, Clock, User, 
-  BookOpen, AlertTriangle, Lightbulb, ClipboardList, Loader2 
+  BookOpen, AlertTriangle, Lightbulb, ClipboardList, Loader2, Image
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -23,6 +23,7 @@ type GroupMeeting = {
   difficulties: string
   solutions: string
   assignments: Array<{ user_id: string; task: string }>
+  attachments?: string[] | null
   created_by: string
   created_at: string
 }
@@ -40,6 +41,8 @@ export default function GroupMeetingHistoryPage() {
   const [meetings, setMeetings] = useState<GroupMeeting[]>([])
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [fetching, setFetching] = useState(true)
+  const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
+  const [lightboxIndex, setLightboxIndex] = useState<number>(0)
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -113,7 +116,7 @@ export default function GroupMeetingHistoryPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6 mb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Users className="h-8 w-8 text-violet-400" /> Biên Bản Họp Nhóm
+              <Users className="h-8 w-8 text-violet-400" /> Ghi Chép Họp Nhóm
             </h1>
             <p className="text-slate-400 text-sm mt-1">Ghi nhận nội dung, khó khăn và phân công công việc của các buổi họp nhóm định kỳ.</p>
           </div>
@@ -121,7 +124,7 @@ export default function GroupMeetingHistoryPage() {
             href="/report/group/new"
             className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md shadow-violet-600/10 cursor-pointer self-start sm:self-center shrink-0"
           >
-            <Plus className="h-4 w-4" /> Lập biên bản mới
+            <Plus className="h-4 w-4" /> Lập ghi chép mới
           </Link>
         </div>
 
@@ -154,7 +157,7 @@ export default function GroupMeetingHistoryPage() {
               <div className="glass-card p-5 rounded-2xl flex flex-col justify-center space-y-1.5">
                 <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">💡 Quy tắc chấm điểm</span>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Nhóm nộp đầy đủ tối thiểu 02 biên bản họp / tuần và hỗ trợ nhau chia sẻ kiến thức sẽ được **cộng tối đa 5 điểm thưởng** vào phần đánh giá thái độ.
+                  Nhóm nộp đầy đủ tối thiểu 02 ghi chép họp / tuần và hỗ trợ nhau chia sẻ kiến thức sẽ được **cộng tối đa 5 điểm thưởng** vào phần đánh giá thái độ.
                 </p>
               </div>
             </div>
@@ -166,12 +169,12 @@ export default function GroupMeetingHistoryPage() {
               {meetings.length === 0 ? (
                 <div className="glass-card rounded-2xl p-12 text-center border border-dashed border-white/5 flex flex-col items-center justify-center gap-3">
                   <Users className="h-10 w-10 text-slate-600 animate-pulse" />
-                  <p className="text-sm text-slate-400 italic">Chưa có biên bản họp nhóm nào được ghi nhận.</p>
+                  <p className="text-sm text-slate-400 italic">Chưa có ghi chép họp nhóm nào được ghi nhận.</p>
                   <Link
                     href="/report/group/new"
                     className="text-xs font-bold text-violet-400 hover:text-violet-300 underline mt-2"
                   >
-                    Tạo biên bản họp nhóm đầu tiên của bạn &rarr;
+                    Tạo ghi chép họp nhóm đầu tiên của bạn &rarr;
                   </Link>
                 </div>
               ) : (
@@ -201,10 +204,23 @@ export default function GroupMeetingHistoryPage() {
                               </span>
                             </div>
 
-                            {/* Writer profile */}
-                            <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                              <span className="text-[10px] uppercase font-bold text-slate-500">Lập biên bản:</span>
-                              <span className="font-semibold text-slate-200">{writerName}</span>
+                            {/* Writer profile & Edit action */}
+                            <div className="flex items-center gap-3 text-xs text-slate-400">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] uppercase font-bold text-slate-500">Lập ghi chép:</span>
+                                <span className="font-semibold text-slate-200">{writerName}</span>
+                              </div>
+                              {user && meeting.created_by === user.id && (
+                                <>
+                                  <span className="h-3 w-px bg-white/10" />
+                                  <Link
+                                    href={`/report/group/new?edit=${meeting.id}`}
+                                    className="text-violet-400 hover:text-violet-300 font-bold transition-colors cursor-pointer"
+                                  >
+                                    Chỉnh sửa
+                                  </Link>
+                                </>
+                              )}
                             </div>
                           </div>
 
@@ -240,6 +256,30 @@ export default function GroupMeetingHistoryPage() {
                                   <p className="text-[13.5px] text-emerald-100 leading-relaxed whitespace-pre-wrap">{meeting.solutions}</p>
                                 </div>
                               </div>
+
+                              {/* Meeting attachments */}
+                              {meeting.attachments && meeting.attachments.length > 0 && (
+                                <div className="space-y-2 pt-2">
+                                  <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Image className="h-4 w-4 text-violet-400" /> Ảnh minh chứng cuộc họp
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2 ml-6 bg-slate-950/30 border border-white/5 p-2 rounded-xl">
+                                    {meeting.attachments.map((img, idx) => (
+                                      <div 
+                                        key={idx} 
+                                        className="h-16 w-24 rounded-lg overflow-hidden border border-white/5 cursor-zoom-in hover:scale-[1.02] transition-all"
+                                        onClick={() => {
+                                          setLightboxImages(meeting.attachments!)
+                                          setLightboxIndex(idx)
+                                        }}
+                                      >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={img} alt={`Minh chứng ${idx + 1}`} className="h-full w-full object-cover" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             {/* 4. Task Assignments */}
@@ -299,6 +339,64 @@ export default function GroupMeetingHistoryPage() {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Lightbox Modal */}
+        {lightboxImages && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md no-print" 
+            onClick={() => setLightboxImages(null)}
+          >
+            {/* Close button */}
+            <button 
+              onClick={() => setLightboxImages(null)} 
+              className="absolute top-5 right-5 text-slate-400 hover:text-white h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-xl transition-all cursor-pointer z-10 animate-fadeIn"
+            >
+              ✕
+            </button>
+
+            {/* Prev button */}
+            {lightboxIndex > 0 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex(prev => prev - 1)
+                }} 
+                className="absolute left-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Next button */}
+            {lightboxIndex < lightboxImages.length - 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setLightboxIndex(prev => prev + 1)
+                }} 
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
+              >
+                ›
+              </button>
+            )}
+
+            {/* Main Image Container */}
+            <div 
+              className="relative max-w-5xl max-h-[85vh] flex flex-col items-center justify-center animate-scaleUp"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src={lightboxImages[lightboxIndex]} 
+                alt={`Image detail ${lightboxIndex + 1}`}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg border border-white/10 shadow-2xl"
+              />
+              <div className="text-xs text-slate-400 font-semibold mt-4 bg-slate-900/80 px-4 py-1.5 rounded-full border border-white/5">
+                Ảnh {lightboxIndex + 1} / {lightboxImages.length}
+              </div>
             </div>
           </div>
         )}

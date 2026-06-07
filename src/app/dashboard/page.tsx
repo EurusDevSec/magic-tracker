@@ -628,7 +628,7 @@ export default function DashboardPage() {
                   <div className="space-y-4 lg:sticky lg:top-24 self-start">
                     <div className="flex items-center justify-between border-b border-white/5 pb-2">
                       <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-violet-400" /> Biên bản họp nhóm
+                        <Users className="h-3.5 w-3.5 text-violet-400" /> Ghi chép họp nhóm
                       </h4>
                       <Link 
                         href="/report/group" 
@@ -646,10 +646,10 @@ export default function DashboardPage() {
                             <Users className="h-8 w-8 text-slate-700 stroke-[1.5]" />
                             <div className="space-y-1">
                               <p className="text-slate-400 font-semibold not-italic">Hôm nay không có họp nhóm</p>
-                              <p className="text-[10px] text-slate-500">Nhóm chưa lập biên bản họp cho ngày này.</p>
+                              <p className="text-[10px] text-slate-500">Nhóm chưa lập ghi chép họp cho ngày này.</p>
                             </div>
                             <Link href="/report/group/new" className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-[10px] rounded-lg transition-all shadow-md cursor-pointer inline-block">
-                              + Lập Biên Bản
+                              + Lập Ghi Chép
                             </Link>
                           </div>
                         )
@@ -971,7 +971,7 @@ export default function DashboardPage() {
               <div className="p-5 border-b border-white/5 flex justify-between items-center bg-slate-900/40">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Biên bản họp nhóm định kỳ</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400">Ghi chép họp nhóm định kỳ</span>
                     <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30 flex items-center gap-1">
                       <Clock className="h-2.5 w-2.5" /> {selectedMeeting.meeting_time.substring(0, 5)} ({selectedMeeting.duration_minutes} phút)
                     </span>
@@ -1067,6 +1067,35 @@ export default function DashboardPage() {
                           })}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Meeting attachments */}
+                {selectedMeeting.attachments && selectedMeeting.attachments.length > 0 && (
+                  <div className="border-t border-white/5 pt-4">
+                    <h4 className="text-xs font-bold text-violet-300 uppercase tracking-wider mb-3">📸 Ảnh minh chứng cuộc họp ({selectedMeeting.attachments.length})</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {selectedMeeting.attachments.map((img: string, idx: number) => (
+                        <div 
+                          key={idx} 
+                          className="relative aspect-[4/3] rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-md group cursor-zoom-in"
+                          onClick={() => {
+                            setLightboxImages(selectedMeeting.attachments!)
+                            setLightboxIndex(idx)
+                          }}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={img} 
+                            alt={`Minh chứng ${idx + 1}`}
+                            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute bottom-0 inset-x-0 bg-black/60 py-1 text-[10px] text-center text-slate-300 font-medium">
+                            Ảnh {idx + 1}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

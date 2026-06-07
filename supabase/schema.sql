@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS public.group_meetings (
     difficulties TEXT NOT NULL,
     solutions TEXT NOT NULL,
     assignments JSONB NOT NULL DEFAULT '[]'::jsonb,
+    attachments TEXT[] DEFAULT '{}'::TEXT[],
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
