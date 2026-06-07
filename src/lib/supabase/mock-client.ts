@@ -318,8 +318,46 @@ Anh cũng giới thiệu 6 cuốn sách gối đầu giường giúp tăng nội
     }
   ];
 
-  // 7. Initial Mock Boss Lessons (4 bài học theo 4 danh mục)
+  // 7. Initial Mock Boss Lessons (Gồm cả bài học & cuộc họp cho bản đồ tư duy)
   const initialBossLessons = [
+    {
+      id: 'meeting-boss-1',
+      title: 'Buổi Họp Định Hướng — Hành Trình Chuyển Hóa Bản Thân',
+      content: `Anh Phụng chia sẻ về triết lý sống và phát triển nội lực. Hành trình chuyển hóa đi theo vòng lặp: Tổn thương ➔ Biết ơn ➔ Đủ đầy. Khi biết nhìn nhận tổn thương như bàn đạp và học cách biết ơn những gì đang có, tâm thế sẽ đạt đến trạng thái đủ đầy — không cần chứng minh gì với ai.
+
+Anh cũng nhắc đến "Tam Bảo" trong Phật giáo như nền tảng vững chắc để nuôi dưỡng nội lực: Phật (giác ngộ), Pháp (chánh đạo), Tăng (cộng đồng tốt lành).
+
+**Định hướng cốt lõi:**
+- Rèn luyện sự điềm tĩnh trước áp lực — không hoảng loạn, không phản ứng quá mức
+- Xây dựng thói quen **biết ơn hàng ngày** để chuyển hóa năng lượng tiêu cực
+- Tìm và xác định **USP cá nhân** — điểm khác biệt làm nên giá trị riêng của mình`,
+      category: 'Meeting',
+      meeting_id: null,
+      created_by: 'user-tien',
+      created_at: new Date(datesList[6] + 'T10:30:00').toISOString(),
+      x_pos: 150,
+      y_pos: 120,
+      connections: ['lesson-1', 'lesson-3']
+    },
+    {
+      id: 'meeting-boss-2',
+      title: 'Buổi Họp Kỹ Năng — Giao Tiếp & Định Vị Sự Nghiệp',
+      content: `Buổi họp tập trung vào kỹ năng giao tiếp sâu và định vị bản thân trong sự nghiệp. Anh Phụng chia sẻ kỹ thuật "đọc vị" — lắng nghe không chỉ ngôn từ mà còn cả cảm xúc ẩn sau lời nói. Người giao tiếp tốt là người khiến đối phương cảm thấy được hiểu và được tôn trọng.
+
+Anh cũng giới thiệu 6 cuốn sách gối đầu giường giúp tăng nội lực và tư duy: *Người bán hàng vĩ đại nhất thế giới*, *Buổi sáng diệu kỳ*, *Bí mật của may mắn*, *Think and Grow Rich*, *Người giàu có nhất thành Babylon*, *Nhà giả kim*.
+
+**Định hướng thực hành:**
+- Áp dụng kỹ thuật **"Phản chiếu cảm xúc"**: Nhắc lại cảm xúc của đối phương trước khi đưa ra ý kiến
+- Bắt đầu **nghi lễ sáng** (Morning Ritual) trong 21 ngày theo phương pháp *Buổi sáng diệu kỳ*
+- Đăng ký kênh **Web5ngay** để cập nhật kiến thức công nghệ hàng ngày`,
+      category: 'Meeting',
+      meeting_id: null,
+      created_by: 'user-hoang',
+      created_at: new Date(datesList[3] + 'T11:00:00').toISOString(),
+      x_pos: 650,
+      y_pos: 120,
+      connections: ['lesson-2', 'lesson-4']
+    },
     {
       id: 'lesson-1',
       title: 'Hành Trình Chuyển Hóa: Tổn Thương ➔ Biết Ơn ➔ Đủ Đầy',
@@ -343,7 +381,10 @@ Anh Phụng chia sẻ rằng mọi người đều đi qua một hành trình ch
       category: 'Mindset',
       meeting_id: 'meeting-boss-1',
       created_by: 'user-tien',
-      created_at: new Date(datesList[5] + 'T14:00:00').toISOString()
+      created_at: new Date(datesList[5] + 'T14:00:00').toISOString(),
+      x_pos: 50,
+      y_pos: 550,
+      connections: []
     },
     {
       id: 'lesson-2',
@@ -371,7 +412,10 @@ Thay vì phản hồi ngay bằng ý kiến của mình, hãy nhắc lại cảm
       category: 'Communication',
       meeting_id: 'meeting-boss-2',
       created_by: 'user-hoang',
-      created_at: new Date(datesList[2] + 'T15:00:00').toISOString()
+      created_at: new Date(datesList[2] + 'T15:00:00').toISOString(),
+      x_pos: 550,
+      y_pos: 550,
+      connections: []
     },
     {
       id: 'lesson-3',
@@ -401,7 +445,10 @@ USP (Unique Selling Proposition) = **Điểm giao giữa**: Bạn giỏi ✕ B�
       category: 'Career',
       meeting_id: 'meeting-boss-1',
       created_by: 'user-linh',
-      created_at: new Date(datesList[4] + 'T16:00:00').toISOString()
+      created_at: new Date(datesList[4] + 'T16:00:00').toISOString(),
+      x_pos: 300,
+      y_pos: 550,
+      connections: []
     },
     {
       id: 'lesson-4',
@@ -434,7 +481,10 @@ Anh Phụng chia sẻ 6 cuốn sách đã thay đổi tư duy và cuộc đời 
       category: 'Resources',
       meeting_id: 'meeting-boss-2',
       created_by: 'user-tien',
-      created_at: new Date(datesList[1] + 'T17:00:00').toISOString()
+      created_at: new Date(datesList[1] + 'T17:00:00').toISOString(),
+      x_pos: 800,
+      y_pos: 550,
+      connections: []
     }
   ];
 
