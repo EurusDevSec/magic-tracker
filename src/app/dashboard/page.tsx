@@ -128,13 +128,26 @@ export default function DashboardPage() {
     if (!loading && !user) router.push('/login')
   }, [user, loading, router])
 
-  // Generate dates: starting today, going backward into the past
+  // Generate dates: starting today, going backward into the past, skipping Sundays
   useEffect(() => {
     const list: string[] = []
-    for (let i = 0; i < dateRangeSize; i++) {
-      const d = new Date()
-      d.setDate(d.getDate() - i)
-      list.push(d.toLocaleDateString('en-CA'))
+    let daysAdded = 0
+    let daysAgo = 0
+    
+    const today = new Date()
+    // If today is Sunday, start counting from yesterday (Saturday)
+    if (today.getDay() === 0) {
+      today.setDate(today.getDate() - 1)
+    }
+
+    while (daysAdded < dateRangeSize) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - daysAgo)
+      if (d.getDay() !== 0) { // skip Sunday
+        list.push(d.toLocaleDateString('en-CA'))
+        daysAdded++
+      }
+      daysAgo++
     }
     setDatesList(list)
   }, [dateRangeSize])
@@ -174,7 +187,14 @@ export default function DashboardPage() {
   const findReport = (userId: string, dateStr: string) =>
     reports.find(r => r.user_id === userId && r.report_date === dateStr)
 
-  const todayStr = new Date().toLocaleDateString('en-CA')
+  const getTodayOrLastWorkingDay = () => {
+    const d = new Date()
+    if (d.getDay() === 0) {
+      d.setDate(d.getDate() - 1)
+    }
+    return d.toLocaleDateString('en-CA')
+  }
+  const todayStr = getTodayOrLastWorkingDay()
   const totalMembers = members.length
   const submittedToday = reports.filter(r => r.report_date === todayStr).length
   const todayRate = totalMembers > 0 ? Math.round((submittedToday / totalMembers) * 100) : 0
@@ -297,9 +317,19 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: 'Tổng thực tập sinh', value: totalMembers, icon: Users, sub: 'Toàn bộ tài khoản' },
-                  { label: 'Tỷ lệ nộp hôm nay', value: `${todayRate}%`, icon: TrendingUp, sub: `${submittedToday}/${totalMembers} người` },
-                  { label: 'Báo cáo hôm nay', value: `${submittedToday}/${totalMembers}`, icon: FileText, sub: 'Đã nộp báo cáo' },
-                  { label: 'Tổng kỳ này', value: reports.length, icon: Calendar, sub: `Trong ${dateRangeSize} ngày qua` },
+                  { 
+                    label: new Date().getDay() === 0 ? 'Tỷ lệ nộp gần nhất' : 'Tỷ lệ nộp hôm nay', 
+                    value: `${todayRate}%`, 
+                    icon: TrendingUp, 
+                    sub: `${submittedToday}/${totalMembers} người` 
+                  },
+                  { 
+                    label: new Date().getDay() === 0 ? 'Báo cáo gần nhất' : 'Báo cáo hôm nay', 
+                    value: `${submittedToday}/${totalMembers}`, 
+                    icon: FileText, 
+                    sub: new Date().getDay() === 0 ? 'Đã nộp gần nhất' : 'Đã nộp báo cáo' 
+                  },
+                  { label: 'Tổng kỳ này', value: reports.length, icon: Calendar, sub: `Trong ${dateRangeSize} ngày làm việc` },
                 ].map((card, i) => (
                   <div key={i} className="glass-card p-5 rounded-2xl flex items-center justify-between">
                     <div>
@@ -340,7 +370,7 @@ export default function DashboardPage() {
 
                 {/* Today pie */}
                 <div className="glass-card p-6 rounded-2xl flex flex-col justify-between">
-                  <h3 className="text-sm font-bold text-white mb-2">🍩 Hôm nay ({new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})</h3>
+                  <h3 className="text-sm font-bold text-white mb-2">🍩 {new Date().getDay() === 0 ? 'Báo cáo gần nhất' : 'Hôm nay'} ({new Date(todayStr + 'T00:00:00').toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })})</h3>
                   <div className="flex-1 flex flex-col items-center justify-center relative">
                     {/* Centered Donut Label */}
                     <div className="absolute flex flex-col items-center justify-center">
@@ -392,7 +422,7 @@ export default function DashboardPage() {
 
               {/* Per-Member Stacked Bar Chart */}
               <div className="glass-card p-6 rounded-2xl">
-                <h3 className="text-sm font-bold text-white mb-1">👤 Tiến độ nộp theo từng người ({dateRangeSize} ngày)</h3>
+                <h3 className="text-sm font-bold text-white mb-1">👤 Tiến độ nộp theo từng người ({dateRangeSize} ngày làm việc)</h3>
                 <p className="text-xs text-slate-500 mb-5">Cột xanh = Đã nộp, Cột tối = Còn thiếu</p>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={memberChartData} margin={{ top: 4, right: 8, left: -20, bottom: 20 }}>
@@ -442,7 +472,7 @@ export default function DashboardPage() {
                       {datesList.map(dateStr => (
                         <option key={dateStr} value={dateStr}>
                           {new Date(dateStr + 'T00:00:00').toLocaleDateString('vi-VN', { weekday: 'short', month: '2-digit', day: '2-digit' })}
-                          {dateStr === todayStr ? ' (Hôm nay)' : ''}
+                          {dateStr === todayStr ? (new Date().getDay() === 0 ? ' (Gần nhất)' : ' (Hôm nay)') : ''}
                         </option>
                       ))}
                     </select>
