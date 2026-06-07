@@ -4,14 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-import { 
-  CheckCircle2, 
-  ChevronRight, 
-  ChevronLeft, 
-  Save, 
-  BookOpen, 
-  HelpCircle, 
-  Calendar, 
+import {
+  CheckCircle2,
+  ChevronRight,
+  ChevronLeft,
+  Save,
+  BookOpen,
+  HelpCircle,
+  Calendar,
   ListTodo,
   AlertTriangle,
   Loader2,
@@ -27,7 +27,7 @@ export default function ReportForm() {
   const router = useRouter()
   const supabase = createClient()
   const [currentStep, setCurrentStep] = useState(1)
-  
+
   // Form states
   const [todayTasks, setTodayTasks] = useState('')
   const [lessonsLearned, setLessonsLearned] = useState('')
@@ -62,7 +62,7 @@ export default function ReportForm() {
         const img = new window.Image()
         img.onload = () => {
           const canvas = document.createElement('canvas')
-          const MAX_SIZE = 1024
+          const MAX_SIZE = 1200
           let width = img.width
           let height = img.height
 
@@ -84,7 +84,7 @@ export default function ReportForm() {
           const ctx = canvas.getContext('2d')
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height)
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75)
             setAttachments(prev => {
               if (prev.length < 5) {
                 return [...prev, compressedBase64]
@@ -101,14 +101,14 @@ export default function ReportForm() {
       }
       reader.readAsDataURL(file)
     })
-    
+
     e.target.value = ''
   }
 
   const removeAttachment = (indexToRemove: number) => {
     setAttachments(prev => prev.filter((_, idx) => idx !== indexToRemove))
   }
-  
+
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [existingReportId, setExistingReportId] = useState<string | null>(null)
@@ -195,7 +195,7 @@ export default function ReportForm() {
 
   const handleSubmit = async () => {
     if (!user) return
-    
+
     // Simple Validation
     if (!todayTasks.trim()) {
       setMessage({ type: 'error', text: 'Vui lòng điền nội dung "Hôm nay làm gì"' })
@@ -241,7 +241,7 @@ export default function ReportForm() {
           .insert([reportPayload])
 
         if (error) throw error
-        
+
         // Clear draft on success
         localStorage.removeItem(DRAFT_KEY)
         setExistingReportId('temp-submitted') // Mark as submitted so draft doesn't write anymore
@@ -282,7 +282,7 @@ export default function ReportForm() {
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
-      
+
       {/* Existing Report Warning banner */}
       {existingReportId && (
         <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-300 flex items-start gap-3">
@@ -323,19 +323,19 @@ export default function ReportForm() {
           </span>
         </div>
         <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/5">
-          <div 
+          <div
             className="bg-gradient-to-r from-violet-600 to-indigo-500 h-full rounded-full transition-all duration-300"
             style={{ width: `${(currentStep / steps.length) * 100}%` }}
           />
         </div>
-        
+
         {/* Step Indicator Bullets */}
         <div className="flex justify-between mt-4">
           {steps.map((s, idx) => {
             const stepNum = idx + 1
             const isCompleted = stepNum < currentStep
             const isActive = stepNum === currentStep
-            
+
             return (
               <button
                 key={idx}
@@ -343,13 +343,12 @@ export default function ReportForm() {
                 disabled={!existingReportId && stepNum > currentStep}
                 className={`flex flex-col items-center gap-1 group focus:outline-none ${!existingReportId && stepNum > currentStep ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
               >
-                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 border ${
-                  isCompleted 
-                    ? 'bg-violet-600 border-violet-600 text-white' 
-                    : isActive 
-                      ? 'bg-violet-500/20 border-violet-500 text-violet-400 ring-2 ring-violet-500/30' 
-                      : 'bg-slate-900 border-white/10 text-slate-400 group-hover:border-slate-500'
-                }`}>
+                <div className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200 border ${isCompleted
+                  ? 'bg-violet-600 border-violet-600 text-white'
+                  : isActive
+                    ? 'bg-violet-500/20 border-violet-500 text-violet-400 ring-2 ring-violet-500/30'
+                    : 'bg-slate-900 border-white/10 text-slate-400 group-hover:border-slate-500'
+                  }`}>
                   {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : stepNum}
                 </div>
                 <span className={`text-[10px] hidden md:block font-medium ${isActive ? 'text-violet-400 font-bold' : 'text-slate-500'}`}>
@@ -377,11 +376,10 @@ export default function ReportForm() {
 
           {/* Submission status messages */}
           {message && (
-            <div className={`mb-6 p-4 rounded-xl border text-sm ${
-              message.type === 'success' 
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-            }`}>
+            <div className={`mb-6 p-4 rounded-xl border text-sm ${message.type === 'success'
+              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+              : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+              }`}>
               {message.text}
             </div>
           )}
@@ -413,8 +411,8 @@ export default function ReportForm() {
                   {attachments.map((base64, index) => (
                     <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-inner">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={base64} 
+                      <img
+                        src={base64}
                         alt={`Attachment ${index + 1}`}
                         className="h-full w-full object-cover"
                       />
@@ -433,9 +431,9 @@ export default function ReportForm() {
 
                   {attachments.length < 5 && (
                     <label className="relative aspect-square rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/50 bg-slate-900/50 hover:bg-violet-950/10 flex flex-col items-center justify-center gap-1.5 text-center p-3 transition-all cursor-pointer group">
-                      <input 
-                        type="file" 
-                        accept="image/*" 
+                      <input
+                        type="file"
+                        accept="image/*"
                         multiple
                         onChange={handleImageUpload}
                         className="hidden"
@@ -508,7 +506,7 @@ export default function ReportForm() {
           {currentStep === 5 && (
             <div className="space-y-6">
               <p className="text-sm text-slate-300">Vui lòng rà soát lại thông tin trước khi nộp báo cáo:</p>
-              
+
               <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 border border-white/5 p-4 rounded-xl bg-slate-950/40">
                 <div>
                   <h4 className="text-xs font-semibold text-violet-400 uppercase tracking-wider">1. Hôm nay làm gì</h4>
@@ -533,8 +531,8 @@ export default function ReportForm() {
                       {attachments.map((base64, idx) => (
                         <div key={idx} className="h-16 w-24 rounded-lg overflow-hidden border border-white/10 shadow-sm shrink-0 bg-slate-900">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img 
-                            src={base64} 
+                          <img
+                            src={base64}
                             alt={`Preview ${idx + 1}`}
                             className="h-full w-full object-cover"
                           />
