@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -35,7 +35,8 @@ type Report = {
 export default function ReportHistoryPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const [reports, setReports] = useState<Report[]>([])
   const [fetching, setFetching] = useState(true)
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
@@ -80,7 +81,7 @@ export default function ReportHistoryPage() {
     }
 
     fetchHistory()
-  }, [user, supabase])
+  }, [user])
 
   const toggleExpand = (id: string) => {
     setExpandedReportId(expandedReportId === id ? null : id)

@@ -87,7 +87,8 @@ const MemberBarTooltip = ({ active, payload, label }: any) => {
 export default function DashboardPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const printRef = useRef<HTMLDivElement>(null)
 
   const [members, setMembers] = useState<Profile[]>([])
@@ -180,7 +181,7 @@ export default function DashboardPage() {
     } finally {
       setFetching(false)
     }
-  }, [user, datesList, supabase])
+  }, [user, datesList])
 
   useEffect(() => { fetchDashboardData() }, [fetchDashboardData])
 

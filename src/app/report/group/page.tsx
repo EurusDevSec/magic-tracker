@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -36,7 +36,8 @@ const MEMBER_COLORS = [
 export default function GroupMeetingHistoryPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   const [meetings, setMeetings] = useState<GroupMeeting[]>([])
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -63,7 +64,7 @@ export default function GroupMeetingHistoryPage() {
     } finally {
       setFetching(false)
     }
-  }, [user, supabase])
+  }, [user])
 
   useEffect(() => {
     fetchData()

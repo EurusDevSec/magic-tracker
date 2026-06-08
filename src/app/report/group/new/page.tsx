@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -19,7 +19,8 @@ type Assignment = { user_id: string; task: string }
 export default function NewGroupMeetingPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [fetchingProfiles, setFetchingProfiles] = useState(true)
@@ -93,7 +94,7 @@ export default function NewGroupMeetingPage() {
     }
 
     fetchProfiles()
-  }, [user, supabase])
+  }, [user])
 
   // Fetch meeting for edit
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function NewGroupMeetingPage() {
     }
 
     fetchMeeting()
-  }, [editId, user, supabase])
+  }, [editId, user])
 
   // Sync assignments array when selectedParticipants changes
   useEffect(() => {

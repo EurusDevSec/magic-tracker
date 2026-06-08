@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +17,8 @@ type GratitudeLog = {
 export default function MagicGratitudePage() {
   const { user, profile, loading } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const [completedDays, setCompletedDays] = useState<number[]>([])
   const [fetching, setFetching] = useState(true)
   const [members, setMembers] = useState<any[]>([])
@@ -39,7 +40,7 @@ export default function MagicGratitudePage() {
       }
       fetchMembers()
     }
-  }, [profile, supabase])
+  }, [profile])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -71,7 +72,7 @@ export default function MagicGratitudePage() {
     }
 
     fetchLogs()
-  }, [user, selectedMemberId, supabase])
+  }, [user, selectedMemberId])
 
   // Determine which is the next day they need to complete
   // (e.g. if they have completed 1, 2, next is 3)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -30,7 +30,8 @@ export default function MagicDayDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { user, profile, loading } = useAuth()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const searchParams = useSearchParams()
   const queryUserId = searchParams ? searchParams.get('userId') : null
   const isViewingOthers = !!(queryUserId && queryUserId !== user?.id && profile?.role === 'admin')
@@ -59,7 +60,7 @@ export default function MagicDayDetailPage() {
       }
       fetchTargetProfile()
     }
-  }, [isViewingOthers, queryUserId, supabase])
+  }, [isViewingOthers, queryUserId])
 
   // Form States
   const [items, setItems] = useState<GratitudeItem[]>(

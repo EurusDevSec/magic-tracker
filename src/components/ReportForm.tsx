@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
@@ -25,7 +25,8 @@ const DRAFT_KEY = 'eti-report-draft'
 export default function ReportForm() {
   const { user } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const [currentStep, setCurrentStep] = useState(1)
 
   // Form states
@@ -169,7 +170,7 @@ export default function ReportForm() {
     }
 
     fetchTodayReport()
-  }, [user, supabase])
+  }, [user])
 
   // 2. Save draft to localStorage on change (only if it's a new report)
   useEffect(() => {

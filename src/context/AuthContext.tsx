@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
@@ -34,7 +34,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  // Use ref so the supabase client is created once and never causes re-renders
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const router = useRouter()
 
   const fetchProfile = async (userId: string) => {
