@@ -26,6 +26,37 @@ type GratitudeItem = {
   reason: string
 }
 
+const PLAYLIST_VIDEOS: Record<number, string> = {
+  1: 'gxUCfZGouUc', // Tập 2 - Bài tập 1: Cảm thấy mình thật Hạnh phúc
+  2: 'zsRUTBT6BVw', // Tập 3 - Bài tập 2: Hòn đá nhiệm màu
+  3: 'm3V-CQ5P8Rg', // Tập 4 - Bài tập 3: Mối quan hệ nhiệm màu
+  4: 'UmPnniavKDk', // Tập 5 - Bài tập 4: Sức khỏe nhiệm màu
+  5: 'KLb0AEryQnU', // Tập 6 - Bài tập 5: Tiền bạc nhiệm màu
+  6: 'mTLGNBgx8u0', // Tập 7 - Bài tập 6: Phép màu trong công việc
+  7: 'dSEX3bqBCCE', // Tập 8 - Bài tập 7: Cánh cửa thoát khỏi sự phủ định (Door to Negativity)
+  8: '6eR1hHSZWKs', // Tập 9 - Bài tập 8: Gia vị nhiệm màu
+  9: 'cT_JKB1k6bc', // Tập 10 - Bài tập 9: Nam châm tiền bạc
+  10: '2nqf1qYhvf8', // Tập 11 - Bài tập 10: Bụi phép thuật dành cho mọi người
+  11: 'yLWA3Qo_pYk', // Tập 12 - Bài tập 11: Buổi sáng nhiệm màu
+  12: '0TwzY_XbaqA', // Tập 13 - Bài tập 12: Những con người nhiệm màu thay đổi cuộc đời bạn
+  13: '9aaEYpHxQE0', // Tập 14 - Bài tập 13: Thực hiện hóa mọi mơ ước
+  14: '_2jheU_2tNY', // Tập 15 - Bài tập 14: Một ngày nhiệm màu
+  15: 'PlNhCE7ztLE', // Tập 16 - Bài tập 15: Phép màu cải thiện mối quan hệ
+  16: '_MlbR0iqu6I', // Tập 17 - Bài tập 16: Phép màu và điều kỳ diệu của sức khỏe
+  17: 'FHwbdrZy22A', // Tập 18 - Bài tập 17: Tấm séc nhiệm màu
+  18: '4wSDEhRj8RM', // Tập 19 - Bài tập 18: Danh sách nhiệm màu
+  19: 'umpfCO5ZuR8', // Tập 20 - Bài tập 19: Bước chân nhiệm màu
+  20: 'w4FNCYbzBIU', // Tập 21 - Bài tập 20: Phép màu của trái tim
+  21: 'joD8WugVKAg', // Tập 22 - Bài tập 21: Kết quả tuyệt diệu
+  22: 'ROX31pvXfrQ', // Tập 23 - Bài tập 22: Phép màu ngay trước mắt
+  23: 'sE8ZOk9fHpc', // Tập 24 - Bài tập 23: Dòng khí nhiệm màu bạn đang hít thở
+  24: 'H4vgsOLs-2o', // Tập 25 - Bài tập 24: Chiếc đũa phép
+  25: 'llLr2KGJVZ4', // Tập 26 - Bài tập 25: Gợi ý nhiệm màu
+  26: 'D0jclwguXP4', // Tập 27 - Bài tập 26: Phép màu biến lỗi lầm thành hạnh phúc
+  27: 'MA1J2GJwnqE', // Tập 28 - Bài tập 27: Tấm gương nhiệm màu
+  28: 'ousy8vZs65Q', // Tập 29 - Bài tập 28: Nghiệm lại phép màu
+}
+
 export default function MagicDayDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -364,6 +395,25 @@ export default function MagicDayDetailPage() {
             </p>
           </div>
         </div>
+
+        {/* YouTube Video Section */}
+        {dayNum >= 1 && dayNum <= 28 && PLAYLIST_VIDEOS[dayNum] && (
+          <div className="glass-card p-6 border-amber-500/20 bg-slate-900/40 rounded-2xl mb-8 space-y-4 shadow-xl">
+            <div className="flex items-center gap-2 text-sm font-bold text-amber-400">
+              <Sparkles className="h-4.5 w-4.5 animate-pulse" />
+              <span>Video thực hành Ngày {dayNum} (MC Quỳnh Hương):</span>
+            </div>
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-white/10 shadow-2xl">
+              <iframe
+                src={`https://www.youtube.com/embed/${PLAYLIST_VIDEOS[dayNum]}?list=PL_BpROBhAeju3SX6rjPa23dy1PX9A8h9F`}
+                title={`Bài tập Ngày ${dayNum} - MC Quỳnh Hương`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="absolute inset-0 w-full h-full border-0"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         {message && (
