@@ -17,7 +17,8 @@ import {
   FileText,
   Plus,
   Clock,
-  Image
+  Image,
+  Users
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -48,7 +49,7 @@ export default function ReportHistoryPage() {
     const date = new Date(utcStr)
     const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
     const vnTime = new Date(utcTime + (3600000 * 7)) // Vietnam is UTC+7
-    return vnTime.getHours() >= 17
+    return vnTime.getHours() >= 22
   }
 
   useEffect(() => {
@@ -62,16 +63,58 @@ export default function ReportHistoryPage() {
 
     const fetchHistory = async () => {
       try {
-        const { data, error } = await supabase
-          .from('reports')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('report_date', { ascending: false })
+        const [reportsRes, meetingsRes] = await Promise.all([
+          supabase
+            .from('reports')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('report_date', { ascending: false }),
+          supabase
+            .from('group_meetings')
+            .select('*')
+            .order('meeting_date', { ascending: false })
+        ])
 
-        if (error) throw error
-        setReports(data || [])
-        if (data && data.length > 0) {
-          setExpandedReportId(data[0].id) // Expand the latest report by default
+        if (reportsRes.error) throw reportsRes.error
+        if (meetingsRes.error) throw meetingsRes.error
+
+        const fetchedReports = reportsRes.data || []
+        const fetchedMeetings = meetingsRes.data || []
+
+        // Merge virtual reports from meetings
+        const finalReports = [...fetchedReports]
+        
+        fetchedMeetings.forEach((meeting: any) => {
+          const dateStr = meeting.meeting_date
+          if (meeting.participants?.includes(user.id)) {
+            const hasReport = finalReports.some(r => r.report_date === dateStr)
+            if (!hasReport) {
+              const assignment = meeting.assignments?.find((a: any) => a.user_id === user.id)
+              const userTask = assignment ? assignment.task : ''
+              
+              finalReports.push({
+                id: `virtual-group-${meeting.id}`,
+                user_id: user.id,
+                report_date: dateStr,
+                today_tasks: `[Báo cáo nhóm] Tham gia họp nhóm định kỳ.\n- Nội dung họp: ${meeting.content}`,
+                lessons_learned: `Giải pháp đề xuất: ${meeting.solutions}`,
+                problems_and_solutions: `Khó khăn từ họp nhóm: ${meeting.difficulties}`,
+                next_day_plan: userTask || 'Theo phân công của họp nhóm.',
+                attachments: meeting.attachments || [],
+                created_at: meeting.created_at,
+                updated_at: meeting.updated_at,
+                is_virtual: true
+              })
+            }
+          }
+        })
+
+        // Sort by report_date descending
+        finalReports.sort((a, b) => new Date(b.report_date).getTime() - new Date(a.report_date).getTime())
+
+        setReports(finalReports)
+        if (finalReports.length > 0) {
+          setExpandedReportId(finalReports[0].id)
         }
       } catch (err) {
         console.error('Error fetching report history:', err)
@@ -186,6 +229,11 @@ export default function ReportHistoryPage() {
                           <p className="text-xs text-slate-400">
                             Đã lưu lúc: {new Date(report.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                           </p>
+                          {report.today_tasks?.startsWith('[Báo cáo nhóm]') && (
+                            <span className="text-[9px] font-bold bg-violet-500/20 text-violet-400 border border-violet-500/30 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                              <Users className="h-2.5 w-2.5" /> Báo cáo nhóm
+                            </span>
+                          )}
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${
                             isReportLate(report.created_at)
                               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'

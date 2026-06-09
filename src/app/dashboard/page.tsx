@@ -112,7 +112,7 @@ export default function DashboardPage() {
     const date = new Date(report.created_at)
     const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
     const vnTime = new Date(utcTime + (3600000 * 7)) // Vietnam is UTC+7
-    return vnTime.getHours() >= 17
+    return vnTime.getHours() >= 22
   }
 
   const formatSubmissionTime = (utcStr: string) => {
@@ -173,9 +173,48 @@ export default function DashboardPage() {
           .gte('meeting_date', datesList[datesList.length - 1])
           .lte('meeting_date', datesList[0])
       ])
-      setMembers((profilesRes.data || []).filter((m: Profile) => m.role !== 'admin'))
-      setReports(reportsRes.data || [])
-      setGroupMeetings(groupMeetingsRes.data || [])
+
+      const fetchedProfiles = profilesRes.data || []
+      const fetchedReports = reportsRes.data || []
+      const fetchedMeetings = groupMeetingsRes.data || []
+
+      // Generate virtual reports for group meeting participants who don't have manual reports
+      const finalReports = [...fetchedReports]
+      
+      fetchedMeetings.forEach((meeting: any) => {
+        const dateStr = meeting.meeting_date
+        meeting.participants?.forEach((pId: string) => {
+          // Check if this participant is not admin
+          const profile = fetchedProfiles.find((p: any) => p.id === pId)
+          if (profile && profile.role !== 'admin') {
+            // Check if they already have a report for this date in finalReports
+            const hasReport = finalReports.some(r => r.user_id === pId && r.report_date === dateStr)
+            if (!hasReport) {
+              // Find assignment for this user
+              const assignment = meeting.assignments?.find((a: any) => a.user_id === pId)
+              const userTask = assignment ? assignment.task : ''
+              
+              finalReports.push({
+                id: `virtual-group-${meeting.id}-${pId}`,
+                user_id: pId,
+                report_date: dateStr,
+                today_tasks: `[Báo cáo nhóm] Tham gia họp nhóm định kỳ.\n- Nội dung họp: ${meeting.content}`,
+                lessons_learned: `Giải pháp đề xuất: ${meeting.solutions}`,
+                problems_and_solutions: `Khó khăn từ họp nhóm: ${meeting.difficulties}`,
+                next_day_plan: userTask || 'Theo phân công của họp nhóm.',
+                attachments: meeting.attachments || [],
+                created_at: meeting.created_at,
+                updated_at: meeting.updated_at,
+                is_virtual: true
+              })
+            }
+          }
+        })
+      })
+
+      setMembers(fetchedProfiles.filter((m: Profile) => m.role !== 'admin'))
+      setReports(finalReports)
+      setGroupMeetings(fetchedMeetings)
     } catch (err) {
       console.error('Error fetching dashboard data:', err)
     } finally {
@@ -525,7 +564,12 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Status Badge */}
-                                <div>
+                                <div className="flex items-center gap-1.5">
+                                  {report && report.today_tasks?.startsWith('[Báo cáo nhóm]') && (
+                                    <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 flex items-center gap-0.5 shrink-0">
+                                      <Users className="h-2.5 w-2.5" /> Báo cáo nhóm
+                                    </span>
+                                  )}
                                   {report ? (
                                     <span className={`text-[9.5px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
                                       late 

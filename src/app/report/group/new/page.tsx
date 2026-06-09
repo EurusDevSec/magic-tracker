@@ -318,6 +318,69 @@ export default function NewGroupMeetingPage() {
         setSuccessMsg('Đã đăng ghi chép họp nhóm thành công!')
       }
 
+      // Auto-fill individual reports for non-admin participants
+      const nonAdminParticipants = selectedParticipants.filter(pId => {
+        const prof = profiles.find(p => p.id === pId)
+        return prof && prof.role !== 'admin'
+      })
+
+      for (const pId of nonAdminParticipants) {
+        // Find assignment for this participant
+        const assignment = assignments.find(a => a.user_id === pId)
+        const userTask = assignment ? assignment.task.trim() : ''
+        
+        // Define fields for the report
+        const reportTodayTasks = `[Báo cáo nhóm] Tham gia họp nhóm định kỳ.\n- Nội dung họp: ${content.trim()}`
+        const reportNextDayPlan = userTask || 'Theo phân công của họp nhóm định kỳ.'
+        const reportProblems = `Khó khăn từ họp nhóm: ${difficulties.trim()}`
+        const reportLessons = `Giải pháp đề xuất: ${solutions.trim()}`
+
+        // Check if report already exists for this user on this date
+        const { data: existingReport, error: fetchError } = await supabase
+          .from('reports')
+          .select('id, today_tasks')
+          .eq('user_id', pId)
+          .eq('report_date', meetingDate)
+          .maybeSingle()
+
+        if (fetchError) {
+          console.error(`Error checking existing report for user ${pId}:`, fetchError)
+          continue
+        }
+
+        const reportPayload = {
+          user_id: pId,
+          report_date: meetingDate,
+          today_tasks: reportTodayTasks,
+          lessons_learned: reportLessons,
+          problems_and_solutions: reportProblems,
+          next_day_plan: reportNextDayPlan,
+          attachments: attachments, // share group meeting attachments
+          updated_at: new Date().toISOString()
+        }
+
+        if (existingReport) {
+          // Only overwrite if it was auto-filled from a group meeting to avoid overwriting user's manual edits
+          if (existingReport.today_tasks?.startsWith('[Báo cáo nhóm]')) {
+            const { error: updateError } = await supabase
+              .from('reports')
+              .update(reportPayload)
+              .eq('id', existingReport.id)
+            if (updateError) {
+              console.error(`Error updating report for user ${pId}:`, updateError)
+            }
+          }
+        } else {
+          // Insert a new report
+          const { error: insertError } = await supabase
+            .from('reports')
+            .insert([reportPayload])
+          if (insertError) {
+            console.error(`Error inserting report for user ${pId}:`, insertError)
+          }
+        }
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' })
 
       setTimeout(() => {

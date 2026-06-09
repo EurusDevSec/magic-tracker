@@ -17,7 +17,8 @@ import {
   Loader2,
   Clock,
   Image,
-  X
+  X,
+  Users
 } from 'lucide-react'
 
 const DRAFT_KEY = 'eti-report-draft'
@@ -118,7 +119,7 @@ export default function ReportForm() {
 
   useEffect(() => {
     const now = new Date()
-    if (now.getHours() >= 17) {
+    if (now.getHours() >= 22) {
       setIsPastDeadline(true)
     }
   }, [])
@@ -147,18 +148,45 @@ export default function ReportForm() {
           setNextDayPlan(data.next_day_plan)
           setAttachments(data.attachments || [])
         } else {
-          // If no existing report, load draft from localStorage
-          const savedDraft = localStorage.getItem(DRAFT_KEY)
-          if (savedDraft) {
-            try {
-              const parsed = JSON.parse(savedDraft)
-              setTodayTasks(parsed.todayTasks || '')
-              setLessonsLearned(parsed.lessonsLearned || '')
-              setProblemsAndSolutions(parsed.problemsAndSolutions || '')
-              setNextDayPlan(parsed.nextDayPlan || '')
-              setAttachments(parsed.attachments || [])
-            } catch (e) {
-              console.error('Error parsing draft', e)
+          // Check if there is a group meeting for today where user is a participant
+          const { data: meetings, error: meetingError } = await supabase
+            .from('group_meetings')
+            .select('*')
+            .eq('meeting_date', todayStr)
+
+          let virtualFilled = false
+
+          if (!meetingError && meetings && meetings.length > 0) {
+            // Find meeting where user is participant
+            const meeting = meetings.find((m: any) => m.participants?.includes(user.id))
+            if (meeting) {
+              const assignment = meeting.assignments?.find((a: any) => a.user_id === user.id)
+              const userTask = assignment ? assignment.task : ''
+              
+              setExistingReportId('virtual-today')
+              setTodayTasks(`[Báo cáo nhóm] Tham gia họp nhóm định kỳ.\n- Nội dung họp: ${meeting.content}`)
+              setLessonsLearned(`Giải pháp đề xuất: ${meeting.solutions}`)
+              setProblemsAndSolutions(`Khó khăn từ họp nhóm: ${meeting.difficulties}`)
+              setNextDayPlan(userTask || 'Theo phân công của họp nhóm định kỳ.')
+              setAttachments(meeting.attachments || [])
+              virtualFilled = true
+            }
+          }
+
+          if (!virtualFilled) {
+            // If no existing report and no group meeting, load draft from localStorage
+            const savedDraft = localStorage.getItem(DRAFT_KEY)
+            if (savedDraft) {
+              try {
+                const parsed = JSON.parse(savedDraft)
+                setTodayTasks(parsed.todayTasks || '')
+                setLessonsLearned(parsed.lessonsLearned || '')
+                setProblemsAndSolutions(parsed.problemsAndSolutions || '')
+                setNextDayPlan(parsed.nextDayPlan || '')
+                setAttachments(parsed.attachments || [])
+              } catch (e) {
+                console.error('Error parsing draft', e)
+              }
             }
           }
         }
@@ -285,7 +313,16 @@ export default function ReportForm() {
     <div className="w-full max-w-3xl mx-auto space-y-6">
 
       {/* Existing Report Warning banner */}
-      {existingReportId && (
+      {existingReportId && todayTasks.startsWith('[Báo cáo nhóm]') && (
+        <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/20 p-4 text-sm text-indigo-300 flex items-start gap-3">
+          <Users className="h-5 w-5 shrink-0 mt-0.5 text-indigo-400" />
+          <div>
+            <span className="font-bold">Báo cáo của bạn hôm nay đã được tạo tự động từ Ghi chép họp nhóm.</span> Bạn có thể giữ nguyên hoặc chỉnh sửa/bổ sung thêm chi tiết nếu cần thiết.
+          </div>
+        </div>
+      )}
+
+      {existingReportId && !todayTasks.startsWith('[Báo cáo nhóm]') && (
         <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-300 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
@@ -299,7 +336,7 @@ export default function ReportForm() {
         <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-4 text-sm text-rose-300 flex items-start gap-3">
           <Clock className="h-5 w-5 shrink-0 mt-0.5 text-rose-400" />
           <div>
-            <span className="font-bold text-rose-400">Đã quá hạn nộp hằng ngày (17h00)!</span> Báo cáo của bạn sẽ được đánh dấu là <span className="font-bold text-rose-400 underline">Nộp muộn</span>. Vui lòng hoàn thành và nộp sớm nhất có thể.
+            <span className="font-bold text-rose-400">Đã quá hạn nộp hằng ngày (22h00)!</span> Báo cáo của bạn sẽ được đánh dấu là <span className="font-bold text-rose-400 underline">Nộp muộn</span>. Vui lòng hoàn thành và nộp sớm nhất có thể.
           </div>
         </div>
       )}
@@ -308,7 +345,7 @@ export default function ReportForm() {
         <div className="rounded-xl bg-violet-500/10 border border-violet-500/25 p-4 text-sm text-violet-300 flex items-start gap-3">
           <Clock className="h-5 w-5 shrink-0 mt-0.5 text-violet-400" />
           <div>
-            <span className="font-bold text-violet-400">Hạn nộp hằng ngày:</span> Trước <span className="font-bold text-white">17h00</span>. Hãy hoàn thành báo cáo đúng hạn để đảm bảo ghi nhận chuyên cần nhé!
+            <span className="font-bold text-violet-400">Hạn nộp hằng ngày:</span> Trước <span className="font-bold text-white">22h00</span>. Hãy hoàn thành báo cáo đúng hạn để đảm bảo ghi nhận chuyên cần nhé!
           </div>
         </div>
       )}
