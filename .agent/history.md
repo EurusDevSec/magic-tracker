@@ -43,6 +43,18 @@ This document records the chronological history of completed requests, fixes, an
 
 ---
 
+## 📅 Log: June 15, 2026
+
+### Shift Sunday Group Meetings to Monday Reports
+*   **Problem:** Sundays are hidden on the tracker/dashboard. When a group meeting was held on a Sunday, individual reports were not populated for Monday, showing members as "Chưa nộp" (Not submitted) for Monday.
+*   **Fixes:**
+    *   **Group Meeting Creation:** Modified `src/app/report/group/new/page.tsx` to shift the target report date to Monday if the selected group meeting date is Sunday.
+    *   **Dashboard Feed:** Modified `src/app/dashboard/page.tsx` to shift Sunday meeting dates to Monday, ensuring virtual reports are correctly generated for Monday.
+    *   **History Feed:** Modified `src/app/report/history/page.tsx` to shift Sunday meeting dates to Monday for virtual reports.
+    *   **Report Form Pre-fill:** Modified `src/components/ReportForm.tsx` to look for Sunday group meetings when a user opens the report form on Monday.
+
+---
+
 ## 📋 Next Steps
 - Continue checking local dev dashboard.
 - Execute SQL policies in production Supabase console.

@@ -81,10 +81,26 @@ export default function ReportHistoryPage() {
         const fetchedReports = reportsRes.data || []
         const fetchedMeetings = meetingsRes.data || []
 
+        // Adjust group meetings held on Sunday to target Monday
+        const adjustedMeetings = fetchedMeetings.map((meeting: any) => {
+          const d = new Date(meeting.meeting_date + 'T00:00:00')
+          if (d.getDay() === 0) { // Sunday
+            d.setDate(d.getDate() + 1)
+            const year = d.getFullYear()
+            const month = String(d.getMonth() + 1).padStart(2, '0')
+            const date = String(d.getDate()).padStart(2, '0')
+            return {
+              ...meeting,
+              meeting_date: `${year}-${month}-${date}`
+            }
+          }
+          return meeting
+        })
+
         // Merge virtual reports from meetings
         const finalReports = [...fetchedReports]
         
-        fetchedMeetings.forEach((meeting: any) => {
+        adjustedMeetings.forEach((meeting: any) => {
           const dateStr = meeting.meeting_date
           if (meeting.participants?.includes(user.id)) {
             const hasReport = finalReports.some(r => r.report_date === dateStr)

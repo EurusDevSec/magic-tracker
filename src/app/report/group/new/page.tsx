@@ -324,6 +324,16 @@ export default function NewGroupMeetingPage() {
         return prof && prof.role !== 'admin'
       })
 
+      let targetReportDate = meetingDate
+      const d = new Date(meetingDate + 'T00:00:00')
+      if (d.getDay() === 0) { // Sunday
+        d.setDate(d.getDate() + 1)
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const date = String(d.getDate()).padStart(2, '0')
+        targetReportDate = `${year}-${month}-${date}`
+      }
+
       for (const pId of nonAdminParticipants) {
         // Find assignment for this participant
         const assignment = assignments.find(a => a.user_id === pId)
@@ -340,7 +350,7 @@ export default function NewGroupMeetingPage() {
           .from('reports')
           .select('id, today_tasks')
           .eq('user_id', pId)
-          .eq('report_date', meetingDate)
+          .eq('report_date', targetReportDate)
           .maybeSingle()
 
         if (fetchError) {
@@ -350,7 +360,7 @@ export default function NewGroupMeetingPage() {
 
         const reportPayload = {
           user_id: pId,
-          report_date: meetingDate,
+          report_date: targetReportDate,
           today_tasks: reportTodayTasks,
           lessons_learned: reportLessons,
           problems_and_solutions: reportProblems,

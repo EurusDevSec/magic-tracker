@@ -149,10 +149,22 @@ export default function ReportForm() {
           setAttachments(data.attachments || [])
         } else {
           // Check if there is a group meeting for today where user is a participant
+          // If today is Monday, we also check yesterday (Sunday)
+          const todayDateObj = new Date(todayStr + 'T00:00:00')
+          const queryDates = [todayStr]
+          if (todayDateObj.getDay() === 1) { // 1 is Monday
+            const yesterdayObj = new Date(todayDateObj)
+            yesterdayObj.setDate(yesterdayObj.getDate() - 1)
+            const year = yesterdayObj.getFullYear()
+            const month = String(yesterdayObj.getMonth() + 1).padStart(2, '0')
+            const date = String(yesterdayObj.getDate()).padStart(2, '0')
+            queryDates.push(`${year}-${month}-${date}`)
+          }
+
           const { data: meetings, error: meetingError } = await supabase
             .from('group_meetings')
             .select('*')
-            .eq('meeting_date', todayStr)
+            .in('meeting_date', queryDates)
 
           let virtualFilled = false
 
