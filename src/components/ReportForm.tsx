@@ -345,7 +345,6 @@ export default function ReportForm() {
       <div className="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-white/5 bg-slate-900/40">
         <div className="flex flex-col gap-1 text-center sm:text-left">
           <span className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">Chọn ngày báo cáo</span>
-          <span className="text-[10px] text-slate-500 font-medium">Bạn có thể chọn ngày trong quá khứ để nộp/chỉnh sửa báo cáo.</span>
         </div>
         <div className="flex items-center gap-2.5 self-center shrink-0">
           <input
