@@ -44,12 +44,14 @@ export default function ReportHistoryPage() {
   const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number>(0)
 
-  const isReportLate = (utcStr: string) => {
-    if (!utcStr) return false
-    const date = new Date(utcStr)
+  const isReportLate = (report: any) => {
+    if (!report?.created_at || !report?.report_date) return false
+    const date = new Date(report.created_at)
     const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
     const vnTime = new Date(utcTime + (3600000 * 7)) // Vietnam is UTC+7
-    return vnTime.getHours() >= 22
+    const vnDateStr = vnTime.toLocaleDateString('en-CA')
+    if (vnDateStr > report.report_date) return true
+    return vnDateStr === report.report_date && vnTime.getHours() >= 22
   }
 
   useEffect(() => {
@@ -251,11 +253,11 @@ export default function ReportHistoryPage() {
                             </span>
                           )}
                           <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${
-                            isReportLate(report.created_at)
+                            isReportLate(report)
                               ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                               : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                           }`}>
-                            {isReportLate(report.created_at) ? (
+                            {isReportLate(report) ? (
                               <>
                                 <Clock className="h-2.5 w-2.5" /> Nộp muộn
                               </>

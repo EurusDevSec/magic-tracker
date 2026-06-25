@@ -108,11 +108,13 @@ export default function DashboardPage() {
   
 
   const isReportLate = (report: any) => {
-    if (!report?.created_at) return false
+    if (!report?.created_at || !report?.report_date) return false
     const date = new Date(report.created_at)
     const utcTime = date.getTime() + (date.getTimezoneOffset() * 60000)
     const vnTime = new Date(utcTime + (3600000 * 7)) // Vietnam is UTC+7
-    return vnTime.getHours() >= 22
+    const vnDateStr = vnTime.toLocaleDateString('en-CA')
+    if (vnDateStr > report.report_date) return true
+    return vnDateStr === report.report_date && vnTime.getHours() >= 22
   }
 
   const formatSubmissionTime = (utcStr: string) => {

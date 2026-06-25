@@ -55,6 +55,17 @@ This document records the chronological history of completed requests, fixes, an
 
 ---
 
+## 📅 Log: June 25, 2026
+
+### Past-Date Report Submissions and Late Check Fixes
+*   **Problem:** The individual report form was hardcoded to submit for the current date (`todayStr`), preventing users from backfilling reports they forgot to submit on previous days. Additionally, reports submitted for a past date would incorrectly be marked as "On time" if they were submitted before 22h00 of the creation day.
+*   **Fixes:**
+    *   **Date Selector:** Added a date input selector at the top of [ReportForm.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/components/ReportForm.tsx) to allow selecting past dates (up to today).
+    *   **Data Fetching & Prefill:** Modified `ReportForm.tsx` to refetch existing report data or load virtual group report templates automatically whenever the selected date changes.
+    *   **Late Submission Logic:** Rewrote `isReportLate` in both `dashboard/page.tsx` and `history/page.tsx` to check if a report's creation date is on a later day than its corresponding `report_date` (marking all backfilled reports as "Nộp muộn").
+
+---
+
 ## 📋 Next Steps
 - Continue checking local dev dashboard.
 - Execute SQL policies in production Supabase console.

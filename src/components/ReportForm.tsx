@@ -31,12 +31,22 @@ export default function ReportForm() {
   const [currentStep, setCurrentStep] = useState(1)
 
   // Form states
+  const [reportDate, setReportDate] = useState('')
   const [todayTasks, setTodayTasks] = useState('')
   const [lessonsLearned, setLessonsLearned] = useState('')
   const [problemsAndSolutions, setProblemsAndSolutions] = useState('')
   const [nextDayPlan, setNextDayPlan] = useState('')
   const [attachments, setAttachments] = useState<string[]>([])
   const [compressing, setCompressing] = useState(false)
+
+  const clearFields = () => {
+    setExistingReportId(null)
+    setTodayTasks('')
+    setLessonsLearned('')
+    setProblemsAndSolutions('')
+    setNextDayPlan('')
+    setAttachments([])
+  }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -118,24 +128,25 @@ export default function ReportForm() {
   const [isPastDeadline, setIsPastDeadline] = useState(false)
 
   useEffect(() => {
+    setReportDate(new Date().toLocaleDateString('en-CA'))
     const now = new Date()
     if (now.getHours() >= 22) {
       setIsPastDeadline(true)
     }
   }, [])
 
-  // 1. Fetch today's report on mount to check if user already submitted
+  // 1. Fetch report on mount or when reportDate changes
   useEffect(() => {
-    if (!user) return
+    if (!user || !reportDate) return
 
-    const fetchTodayReport = async () => {
+    const fetchReportForDate = async () => {
+      setLoading(true)
       try {
-        const todayStr = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
         const { data, error } = await supabase
           .from('reports')
           .select('*')
           .eq('user_id', user.id)
-          .eq('report_date', todayStr)
+          .eq('report_date', reportDate)
           .maybeSingle()
 
         if (error) throw error
@@ -148,12 +159,12 @@ export default function ReportForm() {
           setNextDayPlan(data.next_day_plan)
           setAttachments(data.attachments || [])
         } else {
-          // Check if there is a group meeting for today where user is a participant
-          // If today is Monday, we also check yesterday (Sunday)
-          const todayDateObj = new Date(todayStr + 'T00:00:00')
-          const queryDates = [todayStr]
-          if (todayDateObj.getDay() === 1) { // 1 is Monday
-            const yesterdayObj = new Date(todayDateObj)
+          // Check if there is a group meeting for this date where user is a participant
+          // If the date is Monday, we also check yesterday (Sunday)
+          const dateObj = new Date(reportDate + 'T00:00:00')
+          const queryDates = [reportDate]
+          if (dateObj.getDay() === 1) { // 1 is Monday
+            const yesterdayObj = new Date(dateObj)
             yesterdayObj.setDate(yesterdayObj.getDate() - 1)
             const year = yesterdayObj.getFullYear()
             const month = String(yesterdayObj.getMonth() + 1).padStart(2, '0')
@@ -186,35 +197,43 @@ export default function ReportForm() {
           }
 
           if (!virtualFilled) {
-            // If no existing report and no group meeting, load draft from localStorage
-            const savedDraft = localStorage.getItem(DRAFT_KEY)
-            if (savedDraft) {
-              try {
-                const parsed = JSON.parse(savedDraft)
-                setTodayTasks(parsed.todayTasks || '')
-                setLessonsLearned(parsed.lessonsLearned || '')
-                setProblemsAndSolutions(parsed.problemsAndSolutions || '')
-                setNextDayPlan(parsed.nextDayPlan || '')
-                setAttachments(parsed.attachments || [])
-              } catch (e) {
-                console.error('Error parsing draft', e)
+            const todayStr = new Date().toLocaleDateString('en-CA')
+            if (reportDate === todayStr) {
+              const savedDraft = localStorage.getItem(DRAFT_KEY)
+              if (savedDraft) {
+                try {
+                  const parsed = JSON.parse(savedDraft)
+                  setTodayTasks(parsed.todayTasks || '')
+                  setLessonsLearned(parsed.lessonsLearned || '')
+                  setProblemsAndSolutions(parsed.problemsAndSolutions || '')
+                  setNextDayPlan(parsed.nextDayPlan || '')
+                  setAttachments(parsed.attachments || [])
+                } catch (e) {
+                  console.error('Error parsing draft', e)
+                }
+              } else {
+                clearFields()
               }
+            } else {
+              clearFields()
             }
           }
         }
       } catch (err) {
-        console.error('Error fetching today\'s report:', err)
+        console.error('Error fetching report for date:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchTodayReport()
-  }, [user])
+    fetchReportForDate()
+  }, [user, reportDate])
 
-  // 2. Save draft to localStorage on change (only if it's a new report)
+  // 2. Save draft to localStorage on change (only if it's today's report and it's a new report)
   useEffect(() => {
     if (existingReportId || loading) return
+    const todayStr = new Date().toLocaleDateString('en-CA')
+    if (reportDate !== todayStr) return
 
     const draft = {
       todayTasks,
@@ -224,7 +243,7 @@ export default function ReportForm() {
       attachments
     }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-  }, [todayTasks, lessonsLearned, problemsAndSolutions, nextDayPlan, attachments, existingReportId, loading])
+  }, [todayTasks, lessonsLearned, problemsAndSolutions, nextDayPlan, attachments, existingReportId, loading, reportDate])
 
   const handleNext = () => {
     if (currentStep < 5) setCurrentStep(currentStep + 1)
@@ -252,11 +271,9 @@ export default function ReportForm() {
     setSubmitting(true)
     setMessage(null)
 
-    const todayStr = new Date().toLocaleDateString('en-CA')
-
     const reportPayload = {
       user_id: user.id,
-      report_date: todayStr,
+      report_date: reportDate,
       today_tasks: todayTasks,
       lessons_learned: lessonsLearned || null,
       problems_and_solutions: problemsAndSolutions || null,
@@ -266,7 +283,7 @@ export default function ReportForm() {
     }
 
     try {
-      if (existingReportId) {
+      if (existingReportId && existingReportId !== 'virtual-today') {
         // Update existing report
         const { error } = await supabase
           .from('reports')
@@ -324,12 +341,33 @@ export default function ReportForm() {
   return (
     <div className="w-full max-w-3xl mx-auto space-y-6">
 
+      {/* Date Selector Row */}
+      <div className="glass-card p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-white/5 bg-slate-900/40">
+        <div className="flex flex-col gap-1 text-center sm:text-left">
+          <span className="text-[11px] font-bold text-violet-400 uppercase tracking-widest">Chọn ngày báo cáo</span>
+          <span className="text-[10px] text-slate-500 font-medium">Bạn có thể chọn ngày trong quá khứ để nộp/chỉnh sửa báo cáo.</span>
+        </div>
+        <div className="flex items-center gap-2.5 self-center shrink-0">
+          <input
+            type="date"
+            value={reportDate}
+            onChange={(e) => {
+              if (e.target.value) {
+                setReportDate(e.target.value)
+              }
+            }}
+            max={new Date().toLocaleDateString('en-CA')}
+            className="bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
+          />
+        </div>
+      </div>
+
       {/* Existing Report Warning banner */}
       {existingReportId && todayTasks.startsWith('[Báo cáo nhóm]') && (
         <div className="rounded-xl bg-indigo-500/10 border border-indigo-500/20 p-4 text-sm text-indigo-300 flex items-start gap-3">
           <Users className="h-5 w-5 shrink-0 mt-0.5 text-indigo-400" />
           <div>
-            <span className="font-bold">Báo cáo của bạn hôm nay đã được tạo tự động từ Ghi chép họp nhóm.</span> Bạn có thể giữ nguyên hoặc chỉnh sửa/bổ sung thêm chi tiết nếu cần thiết.
+            <span className="font-bold">Báo cáo của bạn ngày này đã được tạo tự động từ Ghi chép họp nhóm.</span> Bạn có thể giữ nguyên hoặc chỉnh sửa/bổ sung thêm chi tiết nếu cần thiết.
           </div>
         </div>
       )}
@@ -338,22 +376,33 @@ export default function ReportForm() {
         <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-300 flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">Bạn đã nộp báo cáo hôm nay.</span> Việc nộp lại form này sẽ ghi đè báo cáo cũ của ngày hôm nay ({new Date().toLocaleDateString('vi-VN')}).
+            <span className="font-bold">Bạn đã nộp báo cáo cho ngày này.</span> Việc nộp lại form này sẽ ghi đè báo cáo cũ của ngày {new Date(reportDate + 'T00:00:00').toLocaleDateString('vi-VN')}.
           </div>
         </div>
       )}
 
       {/* Deadline Warning banner */}
-      {!existingReportId && isPastDeadline && (
-        <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-4 text-sm text-rose-300 flex items-start gap-3">
-          <Clock className="h-5 w-5 shrink-0 mt-0.5 text-rose-400" />
-          <div>
-            <span className="font-bold text-rose-400">Đã quá hạn nộp hằng ngày (22h00)!</span> Báo cáo của bạn sẽ được đánh dấu là <span className="font-bold text-rose-400 underline">Nộp muộn</span>. Vui lòng hoàn thành và nộp sớm nhất có thể.
+      {!existingReportId && (
+        reportDate === new Date().toLocaleDateString('en-CA') ? (
+          isPastDeadline && (
+            <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-4 text-sm text-rose-300 flex items-start gap-3">
+              <Clock className="h-5 w-5 shrink-0 mt-0.5 text-rose-400" />
+              <div>
+                <span className="font-bold text-rose-400">Đã quá hạn nộp hằng ngày (22h00)!</span> Báo cáo của bạn sẽ được đánh dấu là <span className="font-bold text-rose-400 underline">Nộp muộn</span>. Vui lòng hoàn thành và nộp sớm nhất có thể.
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4 text-sm text-amber-300 flex items-start gap-3">
+            <Clock className="h-5 w-5 shrink-0 mt-0.5 text-amber-400" />
+            <div>
+              <span className="font-bold text-amber-400">Nộp báo cáo cho ngày đã qua:</span> Bạn đang nộp báo cáo cho ngày {new Date(reportDate + 'T00:00:00').toLocaleDateString('vi-VN')}. Báo cáo này sẽ được đánh dấu là <span className="font-bold text-amber-400 underline">Nộp muộn</span>.
+            </div>
           </div>
-        </div>
+        )
       )}
 
-      {!existingReportId && !isPastDeadline && (
+      {!existingReportId && reportDate === new Date().toLocaleDateString('en-CA') && !isPastDeadline && (
         <div className="rounded-xl bg-violet-500/10 border border-violet-500/25 p-4 text-sm text-violet-300 flex items-start gap-3">
           <Clock className="h-5 w-5 shrink-0 mt-0.5 text-violet-400" />
           <div>
@@ -369,7 +418,7 @@ export default function ReportForm() {
             Bước {currentStep} trên {steps.length}
           </span>
           <span className="text-xs text-slate-400">
-            {existingReportId ? 'Chế độ: Chỉnh sửa' : 'Tự động lưu nháp'}
+            {existingReportId ? 'Chế độ: Chỉnh sửa' : (reportDate === new Date().toLocaleDateString('en-CA') ? 'Tự động lưu nháp' : 'Chế độ: Nộp ngày cũ')}
           </span>
         </div>
         <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-white/5">
