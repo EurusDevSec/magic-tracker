@@ -66,6 +66,17 @@ This document records the chronological history of completed requests, fixes, an
 
 ---
 
+## 📅 Log: July 09, 2026
+
+### Group Report Editing & Stepper Resetting Fixes
+*   **Problem 1 (Admin Editing):** Non-creators with `admin` role could not edit group meetings because the edit condition strictly checked for `meeting.created_by === user.id`.
+*   **Fix 1:** Created [update_group_meetings_rls_policies.sql](file:///r:/_Projects/Eurus_Workspace/Report_intern/supabase/update_group_meetings_rls_policies.sql) allowing updates if the user is the creator OR is an admin. Destructured `profile` in [page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/group/page.tsx) and [new/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/group/new/page.tsx) to allow admin roles to see the edit link and bypass the editor permission checks.
+*   **Problem 2 (Selected Members Lost on Step Back):** Moving backward in the group meeting creation stepper (e.g. from step 3 to step 2 or 1) reset the selected participants checklists to just the current user. This was caused by the profile fetching effect trigger refetching and rewriting state on every context user reference change.
+*   **Fix 2:** Refactored the `useEffect` inside `group/new/page.tsx` to:
+    *   Only execute `fetchProfiles()` on mount if the `profiles` array is empty.
+    *   Only auto-select the current user on initial creation if the `selectedParticipants` array is completely empty (`prev.length === 0`).
+
+---
+
 ## 📋 Next Steps
-- Continue checking local dev dashboard.
-- Execute SQL policies in production Supabase console.
+- Run the SQL script `supabase/update_group_meetings_rls_policies.sql` in the production Supabase console.

@@ -17,7 +17,7 @@ type Profile = { id: string; email: string; full_name: string; avatar_url: strin
 type Assignment = { user_id: string; task: string }
 
 export default function NewGroupMeetingPage() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -81,10 +81,10 @@ export default function NewGroupMeetingPage() {
         if (error) throw error
         setProfiles(data || [])
 
-        // Auto-select current user as participant
+        // Auto-select current user as participant on first load only
         const urlParams = new URLSearchParams(window.location.search)
         if (!urlParams.get('edit')) {
-          setSelectedParticipants([user.id])
+          setSelectedParticipants(prev => prev.length === 0 ? [user.id] : prev)
         }
       } catch (err) {
         console.error('Error fetching profiles:', err)
@@ -93,8 +93,10 @@ export default function NewGroupMeetingPage() {
       }
     }
 
-    fetchProfiles()
-  }, [user])
+    if (profiles.length === 0) {
+      fetchProfiles()
+    }
+  }, [user, profiles.length])
 
   // Fetch meeting for edit
   useEffect(() => {
@@ -111,7 +113,7 @@ export default function NewGroupMeetingPage() {
 
         if (error) throw error
         if (data) {
-          if (data.created_by !== user.id) {
+          if (data.created_by !== user.id && profile?.role !== 'admin') {
             setErrorMsg('Bạn không có quyền chỉnh sửa ghi chép họp nhóm này.')
             return
           }

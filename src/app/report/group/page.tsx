@@ -34,7 +34,7 @@ const MEMBER_COLORS = [
 ]
 
 export default function GroupMeetingHistoryPage() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -211,7 +211,7 @@ export default function GroupMeetingHistoryPage() {
                                 <span className="text-[10px] uppercase font-bold text-slate-500">Lập ghi chép:</span>
                                 <span className="font-semibold text-slate-200">{writerName}</span>
                               </div>
-                              {user && meeting.created_by === user.id && (
+                              {user && (meeting.created_by === user.id || profile?.role === 'admin') && (
                                 <>
                                   <span className="h-3 w-px bg-white/10" />
                                   <Link
