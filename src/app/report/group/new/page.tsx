@@ -113,10 +113,6 @@ export default function NewGroupMeetingPage() {
 
         if (error) throw error
         if (data) {
-          if (data.created_by !== user.id && profile?.role !== 'admin') {
-            setErrorMsg('Bạn không có quyền chỉnh sửa ghi chép họp nhóm này.')
-            return
-          }
 
           setMeetingDate(data.meeting_date)
           setMeetingTime(data.meeting_time ? data.meeting_time.substring(0, 5) : '19:00')
