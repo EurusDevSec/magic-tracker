@@ -8,7 +8,7 @@ import Navigation from '@/components/Navigation'
 import UserAvatar from '@/components/UserAvatar'
 import { 
   Users, Plus, Calendar, Clock, User, 
-  BookOpen, AlertTriangle, Lightbulb, ClipboardList, Loader2, Image
+  BookOpen, AlertTriangle, Lightbulb, ClipboardList, Loader2, Image, Trash2
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -44,6 +44,55 @@ export default function GroupMeetingHistoryPage() {
   const [fetching, setFetching] = useState(true)
   const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number>(0)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDelete = async (meeting: GroupMeeting) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa buổi họp nhóm ngày ${new Date(meeting.meeting_date + 'T00:00:00').toLocaleDateString('vi-VN')}? \n\nLưu ý: Các báo cáo cá nhân tự động tạo chứa [Báo cáo nhóm] của các thành viên cho buổi họp này cũng sẽ bị xóa.`)) {
+      return
+    }
+
+    setDeletingId(meeting.id)
+    try {
+      // 1. Delete group meeting from database
+      const { error: deleteMeetingError } = await supabase
+        .from('group_meetings')
+        .delete()
+        .eq('id', meeting.id)
+
+      if (deleteMeetingError) throw deleteMeetingError
+
+      // 2. Calculate target report date (handling Sunday shift)
+      let targetReportDate = meeting.meeting_date
+      const d = new Date(meeting.meeting_date + 'T00:00:00')
+      if (d.getDay() === 0) { // Sunday
+        d.setDate(d.getDate() + 1)
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const date = String(d.getDate()).padStart(2, '0')
+        targetReportDate = `${year}-${month}-${date}`
+      }
+
+      // 3. Delete auto-created reports matching pattern '[Báo cáo nhóm]'
+      const { error: deleteReportsError } = await supabase
+        .from('reports')
+        .delete()
+        .in('user_id', meeting.participants)
+        .eq('report_date', targetReportDate)
+        .like('today_tasks', '[Báo cáo nhóm]%')
+
+      if (deleteReportsError) {
+        console.error('Error deleting associated reports:', deleteReportsError)
+      }
+
+      // 4. Refresh local data list
+      fetchData()
+    } catch (err: any) {
+      console.error('Error deleting group meeting:', err)
+      alert(err.message || 'Lỗi khi xóa buổi họp nhóm.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
@@ -205,7 +254,7 @@ export default function GroupMeetingHistoryPage() {
                               </span>
                             </div>
 
-                            {/* Writer profile & Edit action */}
+                            {/* Writer profile & Edit/Delete action */}
                             <div className="flex items-center gap-3 text-xs text-slate-400">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] uppercase font-bold text-slate-500">Lập ghi chép:</span>
@@ -220,6 +269,18 @@ export default function GroupMeetingHistoryPage() {
                                   >
                                     Chỉnh sửa
                                   </Link>
+                                  {(user.id === meeting.created_by || profile?.role === 'admin') && (
+                                    <>
+                                      <span className="h-3 w-px bg-white/10" />
+                                      <button
+                                        onClick={() => handleDelete(meeting)}
+                                        disabled={deletingId === meeting.id}
+                                        className="text-rose-400 hover:text-rose-300 font-bold transition-colors cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                                      >
+                                        {deletingId === meeting.id ? 'Đang xóa...' : 'Xóa'}
+                                      </button>
+                                    </>
+                                  )}
                                 </>
                               )}
                             </div>

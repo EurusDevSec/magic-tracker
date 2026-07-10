@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
 import UserAvatar from '@/components/UserAvatar'
-import { Loader2, Save, User as UserIcon, Camera, AlertCircle, Check } from 'lucide-react'
+import { Loader2, Save, User as UserIcon, Camera, AlertCircle, Check, Upload } from 'lucide-react'
 
 // Premium preset gradients for avatar backgrounds
 const PRESET_AVATARS = [
@@ -21,13 +21,57 @@ const PRESET_AVATARS = [
 export default function ProfilePage() {
   const { user, profile, loading, refreshProfile } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
 
   const [fullName, setFullName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Cleanup preview URL to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrorMsg('Vui lòng chọn file hình ảnh hợp lệ (PNG, JPG, JPEG,...)')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setErrorMsg('Kích thước ảnh không được vượt quá 5MB')
+        return
+      }
+
+      setErrorMsg('')
+      setSelectedFile(file)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+      setPreviewUrl(URL.createObjectURL(file))
+      setAvatarUrl('')
+    }
+  }
+
+  const handleSelectPreset = (presetId: string) => {
+    setAvatarUrl(presetId)
+    setSelectedFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -37,6 +81,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (profile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFullName(profile.full_name || '')
       setAvatarUrl(profile.avatar_url || 'preset:violet')
     }
@@ -114,12 +159,40 @@ export default function ProfilePage() {
     setSuccessMsg('')
 
     try {
+      let finalAvatarUrl = avatarUrl
+
+      // If a local file is selected, upload it first
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop()
+        const fileName = `avatar_${user.id}_${Date.now()}.${fileExt}`
+        const filePath = fileName
+
+        // Upload to Supabase Storage in 'avatars' bucket
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, selectedFile, {
+            cacheControl: '3600',
+            upsert: true
+          })
+
+        if (uploadError) {
+          throw new Error(`Lỗi tải ảnh lên: ${uploadError.message}`)
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+
+        finalAvatarUrl = publicUrl
+      }
+
       // 1. Update profiles table
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: fullName.trim(),
-          avatar_url: avatarUrl,
+          avatar_url: finalAvatarUrl,
         })
         .eq('id', user.id)
 
@@ -132,12 +205,20 @@ export default function ProfilePage() {
 
       // 3. Refresh context state
       await refreshProfile()
+      // Sync local state
+      setSelectedFile(null)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+      }
+      setAvatarUrl(finalAvatarUrl)
 
       setSuccessMsg('Đã cập nhật thông tin cá nhân thành công!')
       setTimeout(() => setSuccessMsg(''), 4000)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating profile:', err)
-      setErrorMsg(err.message || 'Không thể cập nhật hồ sơ. Vui lòng thử lại!')
+      const errorMsgText = err instanceof Error ? err.message : 'Không thể cập nhật hồ sơ. Vui lòng thử lại!'
+      setErrorMsg(errorMsgText)
     } finally {
       setSaving(false)
     }
@@ -151,6 +232,50 @@ export default function ProfilePage() {
     )
   }
 
+  // Get active avatar preview style
+  const getAvatarPreview = () => {
+    if (previewUrl) {
+      return (
+        <div className="relative h-24 w-24 rounded-full overflow-hidden shadow-xl border-2 border-white/10 bg-slate-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src={previewUrl} 
+            alt="Avatar preview" 
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )
+    }
+
+    if (avatarUrl?.startsWith('preset:')) {
+      const preset = PRESET_AVATARS.find(p => p.id === avatarUrl) || PRESET_AVATARS[0]
+      return (
+        <div className={`h-24 w-24 rounded-full ${preset.bg} ${preset.text} flex items-center justify-center text-3xl font-black shadow-xl border-2 border-white/10`}>
+          {fullName ? fullName.charAt(0).toUpperCase() : <UserIcon className="h-10 w-10" />}
+        </div>
+      )
+    }
+    
+    if (avatarUrl) {
+      return (
+        <div className="relative h-24 w-24 rounded-full overflow-hidden shadow-xl border-2 border-white/10 bg-slate-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img 
+            src={avatarUrl} 
+            alt="Avatar preview" 
+            className="h-full w-full object-cover"
+            onError={() => setAvatarUrl('preset:violet')} 
+          />
+        </div>
+      )
+    }
+
+    return (
+      <div className="h-24 w-24 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center text-3xl font-black border-2 border-white/5">
+        <UserIcon className="h-10 w-10" />
+      </div>
+    )
+  }
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-950 text-slate-100">
       <Navigation />
@@ -182,52 +307,57 @@ export default function ProfilePage() {
 
             <div className="glass-card p-6 md:p-8 rounded-2xl">
               <form onSubmit={handleSave} className="space-y-6">
-
+                
                 {/* Avatar section */}
                 <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/5">
-                  <div className="relative group">
-                    <UserAvatar avatarUrl={avatarUrl} fullName={fullName} sizeClass="h-24 w-24 text-4xl" />
-                    <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-violet-600 border-2 border-slate-950 flex items-center justify-center text-white shadow-lg">
+                  <div 
+                    className="relative group cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Tải ảnh từ thiết bị"
+                  >
+                    {getAvatarPreview()}
+                    <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-violet-600 border-2 border-slate-950 flex items-center justify-center text-white shadow-lg group-hover:bg-violet-500 transition-colors">
                       <Camera className="h-3.5 w-3.5" />
                     </div>
                   </div>
+                  
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
 
                   <div className="flex-1 text-center sm:text-left">
                     <h3 className="text-sm font-bold text-white mb-1">Ảnh đại diện</h3>
-                    <p className="text-xs text-slate-400 mb-3">Chọn màu gradient có sẵn, tải ảnh lên từ máy tính hoặc nhập link ảnh bên dưới.</p>
-
+                    <p className="text-xs text-slate-400 mb-3">Chọn màu gradient có sẵn hoặc tải ảnh lên từ thiết bị.</p>
+                    
                     {/* Preset Avatar buttons & Upload button */}
-                    <div className="flex flex-wrap justify-center sm:justify-start items-center gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        {PRESET_AVATARS.map((preset) => (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            onClick={() => setAvatarUrl(preset.id)}
-                            className={`h-8 w-8 rounded-full ${preset.bg} border-2 transition-transform hover:scale-110 cursor-pointer ${avatarUrl === preset.id ? 'border-white ring-2 ring-violet-500' : 'border-transparent'}`}
-                            title={preset.name}
-                          />
-                        ))}
-                      </div>
-
-                      <div className="h-4 w-px bg-white/10 hidden sm:block" />
-
-                      <div>
-                        <input
-                          type="file"
-                          id="avatarFileInput"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                          disabled={uploading}
+                    <div className="flex flex-wrap justify-center sm:justify-start items-center gap-2">
+                      {PRESET_AVATARS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => handleSelectPreset(preset.id)}
+                          className={`h-8 w-8 rounded-full ${preset.bg} border-2 transition-transform hover:scale-110 cursor-pointer ${avatarUrl === preset.id && !selectedFile ? 'border-white ring-2 ring-violet-500' : 'border-transparent'}`}
+                          title={preset.name}
                         />
-                        <label
-                          htmlFor="avatarFileInput"
-                          className="flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-white border border-violet-500/20 hover:border-violet-500 px-3 py-1.5 rounded-xl bg-violet-500/5 hover:bg-violet-500/10 transition-all cursor-pointer"
-                        >
-                          {uploading ? 'Đang nén...' : 'Tải ảnh từ máy tính'}
-                        </label>
-                      </div>
+                      ))}
+
+                      {/* Choose image from device button */}
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                          selectedFile
+                            ? 'bg-violet-600/20 border-violet-500 text-violet-300 ring-1 ring-violet-500'
+                            : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        {selectedFile ? 'Đã chọn ảnh' : 'Tải ảnh lên'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -274,20 +404,6 @@ export default function ProfilePage() {
                       className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none"
                     />
                   </div>
-
-                  <div>
-                    <label htmlFor="avatarCustom" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
-                      Hoặc dùng Link Ảnh Tự Chọn (Image URL)
-                    </label>
-                    <input
-                      id="avatarCustom"
-                      type="url"
-                      value={avatarUrl?.startsWith('preset:') ? '' : avatarUrl}
-                      onChange={(e) => setAvatarUrl(e.target.value || 'preset:violet')}
-                      placeholder="https://images.unsplash.com/... (để trống nếu dùng màu ở trên)"
-                      className="glass-input block w-full rounded-xl py-2.5 px-4 text-sm text-white focus:outline-none"
-                    />
-                  </div>
                 </div>
 
                 {/* Action buttons */}
@@ -299,7 +415,7 @@ export default function ProfilePage() {
                   >
                     Quay lại
                   </button>
-
+                  
                   <button
                     type="submit"
                     disabled={saving}
