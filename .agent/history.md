@@ -80,12 +80,22 @@ This document records the chronological history of completed requests, fixes, an
 
 ## 📅 Log: July 25, 2026
 
-### Expanded Dashboard Detailed Tracking Table Options
-*   **Problem:** The detailed tracking table (`Bảng Theo Dõi Chi Tiết`) was limited to 7, 14, and 30 days, making it impossible to view or export the full internship log process over 2+ months.
-*   **Fix:**
-    *   **Expanded Range Filters:** Updated [dashboard/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/dashboard/page.tsx) to provide preset options for **7 ngày**, **14 ngày**, **30 ngày**, **60 ngày (2 tháng)**, **90 ngày (3 tháng)**, **120 ngày (4 tháng)**, and **Tất cả (180 ngày)**.
-    *   **Chart & Table Scaling:** Adjusted `dailyBarData` chart XAxis tick intervals dynamically so ticks don't overlap when viewing 60, 90, or 180 days.
-    *   **Full Exporting:** Selecting 60, 90, or 180 days automatically loads all historical reports for those periods into both the interactive grid (with smooth horizontal scroll and sticky member names) and the CSV Export feature.
+### Expanded Dashboard Detailed Tracking Table Options & Logbook Fixes
+*   **Problem 1:** Font rendering in paper preview broke Vietnamese diacritics (adding unwanted spaces like `Tuầ ` n`, `đế ` n`).
+*   **Fix 1:** Removed Tailwind `font-serif` and `tracking-*` classes from Vietnamese text. Added explicit inline font style `fontFamily: '"Times New Roman", Times, serif'`, `letterSpacing: 'normal'`, and CSS rule `.vn-paper-font` for 100% clean Vietnamese diacritics font rendering.
+*   **Problem 2:** Logbook modal only fetched from `reports` table, missing group meeting days when no individual report was filed. Also, users could not split logbooks by Internship Phases (Đợt 1: June-July vs Đợt 2: August-October).
+*   **Fix 2:** Updated `InternshipLogbookModal.tsx` to query both `reports` and `group_meetings` simultaneously across the entire internship history, merging virtual meeting reports, shifting Sunday meetings to Monday, and adding **Phase Filter controls**:
+    *   `🌟 Tất cả (Toàn bộ quá trình)`
+    *   `📅 Đợt 1 (Tháng 6 - Tháng 7)`
+    *   `📅 Đợt 2 (Tháng 8 - Tháng 10)`
+    *   `🎯 Tùy chỉnh (Từ ngày... đến ngày...)`
+    *   Selecting any phase dynamically filters reports and re-indexes `Tuần 1, Tuần 2...` from the first week of that phase.
+*   **Problem 3:** Date formats in certain chart labels or dropdowns displayed in `MM/DD/YYYY` or `MM/DD` format depending on browser locale settings.
+*   **Fix 3:** Enforced deterministic `DD/MM/YYYY` (Ngày/Tháng/Năm) and `DD-MM` (Ngày-Tháng) formatting across all logbook tables, CSV export headers, bar chart labels, and dropdown menus.
+*   **Problem 4:** Default / placeholder mentor name was previously set to `ThS. Nguyễn Văn Phụng`.
+*   **Fix 4:** Updated default mentor name state and fallback value in `InternshipLogbookModal.tsx` to **`Nguyễn Minh Phụng`**.
+*   **Problem 5:** Default topic name placeholder needed to be updated to the official company topic name.
+*   **Fix 5:** Set default topic name in `InternshipLogbookModal.tsx` to **`NGHIÊN CỨU VÀ TRIỂN KHAI HỆ SINH THÁI GIẢI PHÁP SỐ DOANH NGHIỆP TẠI CÔNG TY TNHH GIẢI PHÁP ETI`**.
 
 ---
 

@@ -21,6 +21,7 @@ import {
   Users
 } from 'lucide-react'
 import Link from 'next/link'
+import InternshipLogbookModal from '@/components/InternshipLogbookModal'
 
 type Report = {
   id: string
@@ -34,7 +35,7 @@ type Report = {
 }
 
 export default function ReportHistoryPage() {
-  const { user, loading } = useAuth()
+  const { user, profile, loading } = useAuth()
   const router = useRouter()
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
@@ -43,6 +44,7 @@ export default function ReportHistoryPage() {
   const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
   const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState<number>(0)
+  const [isLogbookModalOpen, setIsLogbookModalOpen] = useState(false)
 
   const isReportLate = (report: any) => {
     if (!report?.created_at || !report?.report_date) return false
@@ -178,12 +180,20 @@ export default function ReportHistoryPage() {
             <h1 className="text-3xl font-extrabold text-white tracking-tight">Lịch Sử Báo Cáo</h1>
             <p className="text-slate-400 text-sm mt-1">Danh sách các báo cáo bạn đã nộp từ trước đến nay.</p>
           </div>
-          <Link
-            href="/report"
-            className="flex items-center gap-1.5 self-start bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all duration-200 shadow-md shadow-violet-600/10 cursor-pointer"
-          >
-            <Plus className="h-4 w-4" /> Báo cáo hôm nay
-          </Link>
+          <div className="flex flex-wrap items-center gap-2.5 self-start">
+            <button
+              onClick={() => setIsLogbookModalOpen(true)}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all duration-200 shadow-md shadow-blue-600/15 cursor-pointer"
+            >
+              <FileText className="h-4 w-4" /> 📘 Xuất Nhật Ký Thực Tập
+            </button>
+            <Link
+              href="/report"
+              className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm px-4 py-2 rounded-xl transition-all duration-200 shadow-md shadow-violet-600/10 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" /> Báo cáo hôm nay
+            </Link>
+          </div>
         </div>
 
         {fetching ? (
@@ -433,6 +443,14 @@ export default function ReportHistoryPage() {
             </div>
           </div>
         )}
+        {/* Internship Logbook Modal */}
+        <InternshipLogbookModal
+          isOpen={isLogbookModalOpen}
+          onClose={() => setIsLogbookModalOpen(false)}
+          userId={user.id}
+          userName={profile?.full_name || user.email || 'Sinh viên'}
+          userEmail={user.email}
+        />
         </div>
       </main>
     </div>
