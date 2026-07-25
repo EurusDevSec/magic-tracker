@@ -416,11 +416,17 @@ export default function DashboardPage() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="0 0" stroke="rgba(255,255,255,0.02)" vertical={false} />
-                      <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                      <XAxis 
+                        dataKey="label" 
+                        tick={{ fontSize: 11, fill: '#94a3b8' }} 
+                        interval={dateRangeSize > 90 ? 7 : dateRangeSize > 60 ? 4 : dateRangeSize > 30 ? 2 : 0} 
+                      />
                       <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} domain={[0, totalMembers || 1]} />
                       <Tooltip content={<CustomDailyTooltip />} cursor={{ fill: 'rgba(255,255,255,0.01)' }} />
                       <Bar dataKey="count" fill="url(#dailyBarGrad)" radius={[6, 6, 0, 0]}>
-                        <LabelList dataKey="count" position="top" style={{ fill: '#c4b5fd', fontSize: 11, fontWeight: 700 }} />
+                        {dateRangeSize <= 30 && (
+                          <LabelList dataKey="count" position="top" style={{ fill: '#c4b5fd', fontSize: 11, fontWeight: 700 }} />
+                        )}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -830,11 +836,26 @@ export default function DashboardPage() {
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5">Click ô xanh để xem nội dung. Mũi tên ▼ chỉ ngày hôm nay.</p>
                   </div>
-                  <div className="flex items-center gap-2 no-print">
-                    {[7, 14, 30].map((size) => (
-                      <button key={size} onClick={() => setDateRangeSize(size)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${dateRangeSize === size ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white bg-slate-900 border border-white/5'}`}>
-                        {size} ngày
+                  <div className="flex flex-wrap items-center gap-1.5 no-print">
+                    {[
+                      { size: 7, label: '7 ngày' },
+                      { size: 14, label: '14 ngày' },
+                      { size: 30, label: '30 ngày' },
+                      { size: 60, label: '60 ngày (2 tháng)' },
+                      { size: 90, label: '90 ngày (3 tháng)' },
+                      { size: 120, label: '120 ngày (4 tháng)' },
+                      { size: 180, label: 'Tất cả (180 ngày)' },
+                    ].map((item) => (
+                      <button
+                        key={item.size}
+                        onClick={() => setDateRangeSize(item.size)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          dateRangeSize === item.size
+                            ? 'bg-violet-600 text-white shadow-md shadow-violet-600/25 border border-violet-500/50'
+                            : 'text-slate-400 hover:text-white bg-slate-900 border border-white/5 hover:border-white/15'
+                        }`}
+                      >
+                        {item.label}
                       </button>
                     ))}
                   </div>

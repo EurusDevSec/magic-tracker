@@ -78,5 +78,17 @@ This document records the chronological history of completed requests, fixes, an
 
 ---
 
+## 📅 Log: July 25, 2026
+
+### Expanded Dashboard Detailed Tracking Table Options
+*   **Problem:** The detailed tracking table (`Bảng Theo Dõi Chi Tiết`) was limited to 7, 14, and 30 days, making it impossible to view or export the full internship log process over 2+ months.
+*   **Fix:**
+    *   **Expanded Range Filters:** Updated [dashboard/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/dashboard/page.tsx) to provide preset options for **7 ngày**, **14 ngày**, **30 ngày**, **60 ngày (2 tháng)**, **90 ngày (3 tháng)**, **120 ngày (4 tháng)**, and **Tất cả (180 ngày)**.
+    *   **Chart & Table Scaling:** Adjusted `dailyBarData` chart XAxis tick intervals dynamically so ticks don't overlap when viewing 60, 90, or 180 days.
+    *   **Full Exporting:** Selecting 60, 90, or 180 days automatically loads all historical reports for those periods into both the interactive grid (with smooth horizontal scroll and sticky member names) and the CSV Export feature.
+
+---
+
 ## 📋 Next Steps
-- Run the SQL script `supabase/update_group_meetings_rls_policies.sql` in the production Supabase console.
+- Continue checking local dev dashboard.
+- Execute SQL policies in production Supabase console.
