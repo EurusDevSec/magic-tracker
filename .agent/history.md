@@ -96,6 +96,8 @@ This document records the chronological history of completed requests, fixes, an
 *   **Fix 4:** Updated default mentor name state and fallback value in `InternshipLogbookModal.tsx` to **`Nguyễn Minh Phụng`**.
 *   **Problem 5:** Default topic name placeholder needed to be updated to the official company topic name.
 *   **Fix 5:** Set default topic name in `InternshipLogbookModal.tsx` to **`NGHIÊN CỨU VÀ TRIỂN KHAI HỆ SINH THÁI GIẢI PHÁP SỐ DOANH NGHIỆP TẠI CÔNG TY TNHH GIẢI PHÁP ETI`**.
+*   **Problem 6:** Users had to close the logbook modal and click a different member card to view another member's logbook.
+*   **Fix 6:** Added a **Member Switcher dropdown** (`👥 Nhật ký của: [Tên thành viên]`) directly inside `InternshipLogbookModal.tsx`. Selecting any member from the dropdown automatically fetches that member's historical reports, updates the student name, and re-aggregates weekly logbook data in real time.
 
 ---
 

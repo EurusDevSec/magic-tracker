@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Sparkles,
   Info,
-  Filter
+  Filter,
+  Users
 } from 'lucide-react'
 
 interface InternshipLogbookModalProps {
@@ -65,6 +66,17 @@ export default function InternshipLogbookModal({
 
   const [loading, setLoading] = useState(true)
   const [reports, setReports] = useState<ReportItem[]>([])
+  
+  // Member Switcher State
+  const [allProfiles, setAllProfiles] = useState<any[]>([])
+  const [activeUserId, setActiveUserId] = useState<string>(userId)
+
+  // Sync activeUserId when userId prop changes
+  useEffect(() => {
+    if (userId) {
+      setActiveUserId(userId)
+    }
+  }, [userId])
 
   // Phase & Date Range Filter State
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilterType>('all')
@@ -84,10 +96,31 @@ export default function InternshipLogbookModal({
   // Active view tab: 'preview' or 'edit_weeks'
   const [activeTab, setActiveTab] = useState<'preview' | 'edit_weeks'>('preview')
 
+  // Fetch all profiles for member dropdown selection
+  useEffect(() => {
+    if (!isOpen) return
+    const fetchProfiles = async () => {
+      try {
+        const { data } = await supabase.from('profiles').select('*').order('full_name')
+        if (data && data.length > 0) {
+          setAllProfiles(data)
+          // Set student name if profile matched
+          const currentP = data.find((p: any) => p.id === activeUserId)
+          if (currentP) {
+            setStudentName(currentP.full_name || currentP.email)
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching profiles in logbook modal:', e)
+      }
+    }
+    fetchProfiles()
+  }, [isOpen, activeUserId])
+
   // Load saved metadata from localStorage
   useEffect(() => {
-    if (typeof window === 'undefined' || !userId) return
-    const saved = localStorage.getItem(STORAGE_KEY_PREFIX + userId)
+    if (typeof window === 'undefined' || !activeUserId) return
+    const saved = localStorage.getItem(STORAGE_KEY_PREFIX + activeUserId)
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
@@ -109,10 +142,10 @@ export default function InternshipLogbookModal({
       } catch (e) {
         console.error('Error loading logbook draft info:', e)
       }
-    } else if (userName) {
+    } else if (userName && activeUserId === userId) {
       setStudentName(userName)
     }
-  }, [userId, userName])
+  }, [activeUserId, userId, userName])
 
   // Save metadata to localStorage
   const saveInfoDraft = (updatedProps: Partial<{
@@ -124,7 +157,7 @@ export default function InternshipLogbookModal({
     defaultNote: string
     customWeekNotes: { [weekNum: number]: string }
   }>) => {
-    if (typeof window === 'undefined' || !userId) return
+    if (typeof window === 'undefined' || !activeUserId) return
     const current = {
       topicName,
       mentorName,
@@ -135,12 +168,12 @@ export default function InternshipLogbookModal({
       customWeekNotes,
       ...updatedProps
     }
-    localStorage.setItem(STORAGE_KEY_PREFIX + userId, JSON.stringify(current))
+    localStorage.setItem(STORAGE_KEY_PREFIX + activeUserId, JSON.stringify(current))
   }
 
-  // Fetch ALL reports and group meetings for this user across entire history
+  // Fetch ALL reports and group meetings for activeUserId across entire history
   useEffect(() => {
-    if (!isOpen || !userId) return
+    if (!isOpen || !activeUserId) return
 
     const fetchAllData = async () => {
       setLoading(true)
@@ -149,7 +182,7 @@ export default function InternshipLogbookModal({
           supabase
             .from('reports')
             .select('*')
-            .eq('user_id', userId)
+            .eq('user_id', activeUserId)
             .order('report_date', { ascending: true }),
           supabase
             .from('group_meetings')
@@ -184,15 +217,15 @@ export default function InternshipLogbookModal({
         
         adjustedMeetings.forEach((meeting: any) => {
           const dateStr = meeting.meeting_date
-          if (meeting.participants?.includes(userId)) {
+          if (meeting.participants?.includes(activeUserId)) {
             const hasReport = finalReports.some(r => r.report_date === dateStr)
             if (!hasReport) {
-              const assignment = meeting.assignments?.find((a: any) => a.user_id === userId)
+              const assignment = meeting.assignments?.find((a: any) => a.user_id === activeUserId)
               const userTask = assignment ? assignment.task : ''
               
               finalReports.push({
                 id: `virtual-group-${meeting.id}`,
-                user_id: userId,
+                user_id: activeUserId,
                 report_date: dateStr,
                 today_tasks: `[Báo cáo nhóm] Tham gia họp nhóm định kỳ.\n- Nội dung họp: ${meeting.content}`,
                 lessons_learned: `Giải pháp đề xuất: ${meeting.solutions}`,
@@ -215,7 +248,7 @@ export default function InternshipLogbookModal({
     }
 
     fetchAllData()
-  }, [isOpen, userId])
+  }, [isOpen, activeUserId])
 
   // Filter reports by phase / date range
   const filteredReports = useMemo(() => {
@@ -568,18 +601,41 @@ export default function InternshipLogbookModal({
               </div>
             ) : (
               <>
-                {/* PHASE / DATE RANGE FILTER BAR */}
+                {/* PHASE / DATE RANGE & MEMBER FILTER BAR */}
                 <div className="glass-card p-4 rounded-xl space-y-3 border border-white/5 bg-slate-950/60">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
                     <div className="text-xs font-bold text-violet-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Filter className="h-3.5 w-3.5" /> Chọn Đợt Thực Tập / Mốc Thời Gian
+                      <Filter className="h-3.5 w-3.5" /> Chọn Thành Viên & Đợt Thực Tập
                     </div>
-                    <div className="text-xs text-slate-400">
-                      Tìm thấy <strong className="text-white">{filteredReports.length} báo cáo</strong> trong mốc thời gian này ({weekGroups.length} tuần).
-                    </div>
+                    
+                    {/* Member Select Dropdown */}
+                    {allProfiles.length > 0 && (
+                      <div className="flex items-center gap-2 bg-slate-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs">
+                        <Users className="h-4 w-4 text-violet-400 shrink-0" />
+                        <span className="text-slate-400 font-semibold shrink-0">Nhật ký của:</span>
+                        <select
+                          value={activeUserId}
+                          onChange={(e) => {
+                            const selectedId = e.target.value
+                            setActiveUserId(selectedId)
+                            const p = allProfiles.find(item => item.id === selectedId)
+                            if (p) {
+                              setStudentName(p.full_name || p.email)
+                            }
+                          }}
+                          className="bg-transparent text-white font-bold focus:outline-none cursor-pointer pr-1"
+                        >
+                          {allProfiles.map(p => (
+                            <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                              {p.full_name || p.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
                     {[
                       { key: 'all', label: '🌟 Tất cả (Toàn bộ)' },
                       { key: 'dot1', label: '📅 Đợt 1 (Tháng 6 - Tháng 7)' },
@@ -629,7 +685,7 @@ export default function InternshipLogbookModal({
                   <div className="glass-card p-12 text-center flex flex-col items-center justify-center space-y-3">
                     <Info className="h-12 w-12 text-slate-600" />
                     <h4 className="text-base font-bold text-white">Không có báo cáo trong đợt thực tập này</h4>
-                    <p className="text-xs text-slate-400 max-w-sm">Không tìm thấy báo cáo tiến độ nào trong mốc thời gian đã chọn. Hãy thử đổi sang đợt thực tập khác.</p>
+                    <p className="text-xs text-slate-400 max-w-sm">Không tìm thấy báo cáo tiến độ nào trong mốc thời gian đã chọn. Hãy thử đổi sang đợt thực tập khác hoặc chọn thành viên khác.</p>
                   </div>
                 ) : (
                   <>
@@ -783,7 +839,7 @@ export default function InternshipLogbookModal({
                       <div className="space-y-4">
                         <div className="text-xs text-slate-400 bg-violet-500/10 border border-violet-500/20 p-3 rounded-xl flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-violet-400 shrink-0" />
-                          <span>Dữ liệu nội dung công việc được tự động trích xuất từ <strong>{filteredReports.length} bản báo cáo</strong> trong đợt thực tập đã chọn. Bạn có thể thay đổi đánh giá ghi chú cho từng tuần tại đây.</span>
+                          <span>Dữ liệu nội dung công việc được tự động trích xuất từ <strong>{filteredReports.length} bản báo cáo</strong> của <strong>{studentName}</strong>. Bạn có thể thay đổi đánh giá ghi chú cho từng tuần tại đây.</span>
                         </div>
 
                         <div className="space-y-3">
