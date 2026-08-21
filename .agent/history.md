@@ -101,6 +101,16 @@ This document records the chronological history of completed requests, fixes, an
 
 ---
 
+## 📅 Log: August 21, 2026
+
+### High-Fidelity WebP 2K Upload & Interactive Pro ImageViewer
+*   **Problem:** Uploaded images (screenshots of documents, mindmaps, code) were blurred and squeezed due to 1200px JPEG 75% canvas compression and static `max-h-[80vh]` lightbox without zoom/pan controls.
+*   **Fix:**
+    *   **Created [image-utils.ts](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/lib/image-utils.ts):** Implemented `compressImageToWebP` providing 2048px (2K) resolution, 85% WebP quality, and `imageSmoothingQuality = 'high'`. Keeps text razor sharp while producing lightweight files (~120KB - 180KB).
+    *   **Created [ImageViewerModal.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/components/ImageViewerModal.tsx):** Built a dedicated lightbox viewer with interactive Zoom In/Out (100% - 500%), Mouse Wheel Zoom, Click & Drag Pan, Double-Click Zoom Toggle, 90° Rotate, Open in New Tab (Full Size), and Native Download.
+    *   **Integrated:** Replaced basic lightboxes and updated upload pipelines in [ReportForm.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/components/ReportForm.tsx), [group/new/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/group/new/page.tsx), [history/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/history/page.tsx), [group/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/group/page.tsx), and [dashboard/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/dashboard/page.tsx).
+
+---
+
 ## 📋 Next Steps
-- Continue checking local dev dashboard.
-- Execute SQL policies in production Supabase console.
+- Test uploading and zooming high-resolution mindmaps on `http://localhost:3000`.

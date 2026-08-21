@@ -20,6 +20,8 @@ import {
   X,
   Users
 } from 'lucide-react'
+import { compressImageToWebP } from '@/lib/image-utils'
+import ImageViewerModal from '@/components/ImageViewerModal'
 
 const DRAFT_KEY = 'eti-report-draft'
 
@@ -48,9 +50,11 @@ export default function ReportForm() {
     setAttachments([])
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [previewImageIndex, setPreviewImageIndex] = useState<number | null>(null)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (!files) return
+    if (!files || files.length === 0) return
 
     const fileList = Array.from(files)
     if (attachments.length + fileList.length > 5) {
@@ -59,62 +63,29 @@ export default function ReportForm() {
     }
 
     setCompressing(true)
-    let processedCount = 0
-
-    fileList.forEach(file => {
-      if (!file.type.startsWith('image/')) {
-        alert(`Tệp "${file.name}" không phải là ảnh hợp lệ!`)
-        processedCount++
-        if (processedCount === fileList.length) setCompressing(false)
-        return
-      }
-
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const img = new window.Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const MAX_SIZE = 1200
-          let width = img.width
-          let height = img.height
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width
-              width = MAX_SIZE
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height
-              height = MAX_SIZE
-            }
-          }
-
-          canvas.width = width
-          canvas.height = height
-
-          const ctx = canvas.getContext('2d')
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height)
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75)
-            setAttachments(prev => {
-              if (prev.length < 5) {
-                return [...prev, compressedBase64]
-              }
-              return prev
-            })
-          }
-          processedCount++
-          if (processedCount === fileList.length) {
-            setCompressing(false)
-          }
+    try {
+      const compressedList: string[] = []
+      for (const file of fileList) {
+        if (!file.type.startsWith('image/')) {
+          alert(`Tệp "${file.name}" không phải là ảnh hợp lệ!`)
+          continue
         }
-        img.src = event.target?.result as string
+        // Compress to high-fidelity 2K WebP with crystal clear text quality
+        const compressedBase64 = await compressImageToWebP(file, 2048, 0.85)
+        compressedList.push(compressedBase64)
       }
-      reader.readAsDataURL(file)
-    })
 
-    e.target.value = ''
+      setAttachments(prev => {
+        const combined = [...prev, ...compressedList]
+        return combined.slice(0, 5)
+      })
+    } catch (err: any) {
+      console.error('Error compressing images:', err)
+      alert(err.message || 'Lỗi khi xử lý hình ảnh!')
+    } finally {
+      setCompressing(false)
+      e.target.value = ''
+    }
   }
 
   const removeAttachment = (indexToRemove: number) => {
@@ -507,22 +478,29 @@ export default function ReportForm() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   {attachments.map((base64, index) => (
-                    <div key={index} className="relative group aspect-square rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-inner">
+                    <div 
+                      key={index} 
+                      onClick={() => setPreviewImageIndex(index)}
+                      className="relative group aspect-square rounded-xl overflow-hidden border border-white/10 bg-slate-900 shadow-inner cursor-pointer hover:border-violet-500/50 transition-all"
+                    >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={base64}
                         alt={`Attachment ${index + 1}`}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform"
                       />
                       <button
                         type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center border border-rose-500 shadow-md transition-all scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          removeAttachment(index)
+                        }}
+                        className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center border border-rose-500 shadow-md transition-all scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 cursor-pointer z-10"
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
-                      <div className="absolute bottom-0 inset-x-0 bg-black/60 py-0.5 text-[9px] text-center text-slate-300 font-bold opacity-60">
-                        Ảnh {index + 1}
+                      <div className="absolute bottom-0 inset-x-0 bg-black/60 py-0.5 text-[9px] text-center text-slate-300 font-bold opacity-75 group-hover:bg-violet-950/80 group-hover:text-violet-200 transition-colors">
+                        Ảnh {index + 1} (Xem nét)
                       </div>
                     </div>
                   ))}
@@ -684,6 +662,15 @@ export default function ReportForm() {
         </div>
 
       </div>
+
+      {/* High-Resolution Interactive Image Lightbox Modal */}
+      <ImageViewerModal
+        isOpen={previewImageIndex !== null}
+        onClose={() => setPreviewImageIndex(null)}
+        images={attachments}
+        initialIndex={previewImageIndex ?? 0}
+        title="Xem Trước Ảnh Minh Chứng (WebP 2K)"
+      />
     </div>
   )
 }

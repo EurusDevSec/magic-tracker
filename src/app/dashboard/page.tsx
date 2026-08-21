@@ -16,6 +16,7 @@ import {
   Loader2, Calendar, Info, Download, Printer, Clock
 } from 'lucide-react'
 import InternshipLogbookModal from '@/components/InternshipLogbookModal'
+import ImageViewerModal from '@/components/ImageViewerModal'
 
 type Profile = { id: string; email: string; full_name: string; avatar_url: string | null; role: string }
 type Report = {
@@ -1227,63 +1228,14 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Lightbox Modal */}
-        {lightboxImages && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-md no-print" 
-            onClick={() => setLightboxImages(null)}
-          >
-            {/* Close button */}
-            <button 
-              onClick={() => setLightboxImages(null)} 
-              className="absolute top-5 right-5 text-slate-400 hover:text-white h-10 w-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-xl transition-all cursor-pointer z-10 animate-fadeIn"
-            >
-              ✕
-            </button>
-
-            {/* Prev button */}
-            {lightboxIndex > 0 && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setLightboxIndex(prev => prev - 1)
-                }} 
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
-              >
-                ‹
-              </button>
-            )}
-
-            {/* Next button */}
-            {lightboxIndex < lightboxImages.length - 1 && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setLightboxIndex(prev => prev + 1)
-                }} 
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-white h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-2xl transition-all cursor-pointer z-10"
-              >
-                ›
-              </button>
-            )}
-
-            {/* Main Image Container */}
-            <div 
-              className="relative max-w-5xl max-h-[85vh] flex flex-col items-center justify-center animate-scaleUp"
-              onClick={e => e.stopPropagation()}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src={lightboxImages[lightboxIndex]} 
-                alt={`Image detail ${lightboxIndex + 1}`}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg border border-white/10 shadow-2xl"
-              />
-              <div className="text-xs text-slate-400 font-semibold mt-4 bg-slate-900/80 px-4 py-1.5 rounded-full border border-white/5">
-                Ảnh {lightboxIndex + 1} / {lightboxImages.length}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* High-Resolution Interactive Image Lightbox Modal */}
+        <ImageViewerModal
+          isOpen={lightboxImages !== null}
+          onClose={() => setLightboxImages(null)}
+          images={lightboxImages || []}
+          initialIndex={lightboxIndex}
+          title="Ảnh Minh Chứng Báo Cáo Tiến Độ"
+        />
         {/* Internship Logbook Export Modal */}
         {logbookUser && (
           <InternshipLogbookModal

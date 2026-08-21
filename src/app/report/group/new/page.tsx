@@ -12,6 +12,8 @@ import {
   Image, X
 } from 'lucide-react'
 import Link from 'next/link'
+import { compressImageToWebP } from '@/lib/image-utils'
+import ImageViewerModal from '@/components/ImageViewerModal'
 
 type Profile = { id: string; email: string; full_name: string; avatar_url: string | null; role: string }
 type Assignment = { user_id: string; task: string }
@@ -148,9 +150,11 @@ export default function NewGroupMeetingPage() {
     })
   }, [selectedParticipants])
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [previewImageIndex, setPreviewImageIndex] = useState<number | null>(null)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (!files) return
+    if (!files || files.length === 0) return
 
     const fileList = Array.from(files)
     if (attachments.length + fileList.length > 5) {
@@ -159,62 +163,28 @@ export default function NewGroupMeetingPage() {
     }
 
     setCompressing(true)
-    let processedCount = 0
-
-    fileList.forEach(file => {
-      if (!file.type.startsWith('image/')) {
-        alert(`Tệp "${file.name}" không phải là ảnh hợp lệ!`)
-        processedCount++
-        if (processedCount === fileList.length) setCompressing(false)
-        return
-      }
-
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const img = new window.Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const MAX_SIZE = 1200
-          let width = img.width
-          let height = img.height
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width
-              width = MAX_SIZE
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height
-              height = MAX_SIZE
-            }
-          }
-
-          canvas.width = width
-          canvas.height = height
-
-          const ctx = canvas.getContext('2d')
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height)
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75)
-            setAttachments(prev => {
-              if (prev.length < 5) {
-                return [...prev, compressedBase64]
-              }
-              return prev
-            })
-          }
-          processedCount++
-          if (processedCount === fileList.length) {
-            setCompressing(false)
-          }
+    try {
+      const compressedList: string[] = []
+      for (const file of fileList) {
+        if (!file.type.startsWith('image/')) {
+          alert(`Tệp "${file.name}" không phải là ảnh hợp lệ!`)
+          continue
         }
-        img.src = event.target?.result as string
+        const compressedBase64 = await compressImageToWebP(file, 2048, 0.85)
+        compressedList.push(compressedBase64)
       }
-      reader.readAsDataURL(file)
-    })
 
-    e.target.value = ''
+      setAttachments(prev => {
+        const combined = [...prev, ...compressedList]
+        return combined.slice(0, 5)
+      })
+    } catch (err: any) {
+      console.error('Error compressing group meeting images:', err)
+      alert(err.message || 'Lỗi khi xử lý hình ảnh!')
+    } finally {
+      setCompressing(false)
+      e.target.value = ''
+    }
   }
 
   const removeAttachment = (indexToRemove: number) => {
@@ -607,13 +577,20 @@ export default function NewGroupMeetingPage() {
 
                       <div className="flex flex-wrap gap-3 pt-2">
                         {attachments.map((img, idx) => (
-                          <div key={idx} className="relative h-20 w-20 rounded-xl overflow-hidden border border-white/10 group">
+                          <div 
+                            key={idx} 
+                            onClick={() => setPreviewImageIndex(idx)}
+                            className="relative h-20 w-20 rounded-xl overflow-hidden border border-white/10 group cursor-pointer hover:border-violet-500/50 transition-all"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={img} alt={`Minh chứng ${idx + 1}`} className="h-full w-full object-cover" />
+                            <img src={img} alt={`Minh chứng ${idx + 1}`} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
                             <button
                               type="button"
-                              onClick={() => removeAttachment(idx)}
-                              className="absolute top-1 right-1 bg-black/60 hover:bg-rose-600 text-white rounded-full p-1 transition-colors cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                removeAttachment(idx)
+                              }}
+                              className="absolute top-1 right-1 bg-black/60 hover:bg-rose-600 text-white rounded-full p-1 transition-colors cursor-pointer z-10"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -717,6 +694,15 @@ export default function NewGroupMeetingPage() {
             </div>
           </div>
         </div>
+
+        {/* High-Resolution Interactive Image Lightbox Modal */}
+        <ImageViewerModal
+          isOpen={previewImageIndex !== null}
+          onClose={() => setPreviewImageIndex(null)}
+          images={attachments}
+          initialIndex={previewImageIndex ?? 0}
+          title="Xem Trước Ảnh Minh Chứng Họp Nhóm (WebP 2K)"
+        />
       </main>
     </div>
   )
