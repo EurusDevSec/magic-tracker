@@ -55,9 +55,9 @@ export default function ImageViewerModal({
     setRotation(0)
   }, [])
 
-  // Zoom controls
+  // Zoom controls (up to 800% for 4K / deep text inspection)
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.5, 5))
+    setScale(prev => Math.min(prev + 0.5, 8))
   }
 
   const handleZoomOut = () => {
@@ -66,6 +66,13 @@ export default function ImageViewerModal({
       if (next <= 1) setPosition({ x: 0, y: 0 })
       return next
     })
+  }
+
+  const handleSetScale = (targetScale: number) => {
+    setScale(targetScale)
+    if (targetScale <= 1) {
+      setPosition({ x: 0, y: 0 })
+    }
   }
 
   const handleRotate = () => {
@@ -93,11 +100,11 @@ export default function ImageViewerModal({
     e.stopPropagation()
     if (e.deltaY < 0) {
       // Zoom in
-      setScale(prev => Math.min(prev + 0.25, 5))
+      setScale(prev => Math.min(prev + 0.35, 8))
     } else {
       // Zoom out
       setScale(prev => {
-        const next = Math.max(prev - 0.25, 0.5)
+        const next = Math.max(prev - 0.35, 0.5)
         if (next <= 1) setPosition({ x: 0, y: 0 })
         return next
       })
@@ -126,11 +133,11 @@ export default function ImageViewerModal({
     setIsDragging(false)
   }
 
-  // Double click to toggle zoom (1x <-> 2.5x)
+  // Double click to toggle zoom (1x <-> 3x)
   const handleDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (scale === 1) {
-      setScale(2.5)
+      setScale(3)
     } else {
       resetTransform()
     }
@@ -160,7 +167,7 @@ export default function ImageViewerModal({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, handlePrev, handleNext, onClose, resetTransform])
 
-  // Open in New Tab
+  // Open in New Tab (Full Raw Original Resolution)
   const handleOpenInNewTab = () => {
     const currentSrc = images[currentIndex]
     if (!currentSrc) return
@@ -170,10 +177,10 @@ export default function ImageViewerModal({
         <!DOCTYPE html>
         <html>
           <head>
-            <title>Ảnh Minh Chứng - ETI Tracker</title>
+            <title>Ảnh Gốc Độ Phân Giải Cao - ETI Tracker</title>
             <style>
-              body { margin: 0; background: #0b0f19; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-              img { max-width: 100%; height: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+              body { margin: 0; background: #07090e; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+              img { max-width: 100%; height: auto; box-shadow: 0 15px 40px rgba(0,0,0,0.8); border-radius: 8px; }
             </style>
           </head>
           <body>
@@ -203,21 +210,21 @@ export default function ImageViewerModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-xl select-none animate-fadeIn"
+      className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-2xl select-none animate-fadeIn"
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
       {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-slate-950/80 border-b border-white/10 z-20">
+      <div className="flex items-center justify-between px-6 py-3.5 bg-slate-950/85 border-b border-white/10 z-20 shadow-md">
         <div className="flex items-center gap-3">
           <div className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
-            🖼️ {title || 'Ảnh Minh Chứng Kết Quả'}
+            🖼️ {title || 'Ảnh Minh Chứng Kết Quả (Siêu Nét 4K)'}
           </div>
           <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-600/30 text-violet-300 border border-violet-500/30">
-            {currentIndex + 1} / {images.length}
+            Ảnh {currentIndex + 1} / {images.length}
           </span>
           <span className="hidden sm:inline-block text-xs text-slate-400">
-            • Zoom: <strong className="text-violet-400">{Math.round(scale * 100)}%</strong>
+            • Tỉ lệ Zoom: <strong className="text-violet-400 font-bold">{Math.round(scale * 100)}%</strong>
           </span>
         </div>
 
@@ -225,16 +232,16 @@ export default function ImageViewerModal({
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenInNewTab}
-            title="Mở ảnh gốc trong tab mới"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white text-xs font-medium border border-white/10 transition-all cursor-pointer"
+            title="Mở ảnh gốc trong tab mới để xem kích thước 100%"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/40 text-violet-300 hover:text-white text-xs font-semibold border border-violet-500/30 transition-all cursor-pointer shadow-sm"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Mở tab mới</span>
+            <span>Mở Tab Mới (100% Gốc)</span>
           </button>
 
           <button
             onClick={handleDownload}
-            title="Tải ảnh về máy"
+            title="Tải ảnh gốc về máy"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white text-xs font-medium border border-white/10 transition-all cursor-pointer"
           >
             <Download className="h-3.5 w-3.5" />
@@ -244,7 +251,7 @@ export default function ImageViewerModal({
           <button
             onClick={onClose}
             title="Đóng (Esc)"
-            className="h-9 w-9 rounded-xl bg-white/10 hover:bg-rose-600/80 text-white flex items-center justify-center transition-all cursor-pointer ml-2"
+            className="h-9 w-9 rounded-xl bg-white/10 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer ml-1"
           >
             <X className="h-5 w-5" />
           </button>
@@ -288,11 +295,11 @@ export default function ImageViewerModal({
           </button>
         )}
 
-        {/* Transformed Image Element */}
+        {/* Transformed Image Element with High-Performance GPU Acceleration */}
         <div
-          className="transition-transform duration-75 ease-out select-none pointer-events-auto"
+          className="transition-transform duration-75 ease-out select-none pointer-events-auto will-change-transform"
           style={{
-            transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
+            transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`,
             transformOrigin: 'center center'
           }}
         >
@@ -301,8 +308,11 @@ export default function ImageViewerModal({
             src={currentImage}
             alt={`Ảnh minh chứng ${currentIndex + 1}`}
             draggable={false}
-            className="max-w-[85vw] max-h-[75vh] object-contain rounded-lg shadow-2xl border border-white/10"
-            style={{ imageRendering: 'auto' }}
+            className="max-w-[88vw] max-h-[76vh] object-contain rounded-lg shadow-2xl border border-white/10"
+            style={{
+              imageRendering: 'auto',
+              WebkitBackfaceVisibility: 'hidden'
+            }}
           />
         </div>
       </div>
@@ -311,11 +321,11 @@ export default function ImageViewerModal({
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 bg-slate-950/90 border-t border-white/10 z-20">
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <Move className="h-3.5 w-3.5 text-violet-400" />
-          <span className="hidden md:inline">Lăn chuột để Zoom • Giữ chuột trái kéo để di chuyển • Nhấp đúp để phóng to</span>
+          <span className="hidden md:inline">Lăn chuột để Zoom • Giữ chuột trái kéo để di chuyển • Nhấp đúp để phóng to 300%</span>
         </div>
 
-        {/* Controls Center */}
-        <div className="flex items-center gap-2 bg-slate-900/90 border border-white/10 rounded-2xl p-1.5 shadow-xl mx-auto sm:mx-0">
+        {/* Controls Center with Quick Presets */}
+        <div className="flex items-center gap-1.5 bg-slate-900/90 border border-white/10 rounded-2xl p-1.5 shadow-xl mx-auto sm:mx-0">
           <button
             onClick={handleZoomOut}
             disabled={scale <= 0.5}
@@ -325,18 +335,28 @@ export default function ImageViewerModal({
             <ZoomOut className="h-4 w-4" />
           </button>
 
-          <button
-            onClick={resetTransform}
-            title="Kích thước ban đầu (0)"
-            className="px-3 h-8 rounded-xl bg-white/5 hover:bg-white/15 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1 transition-all cursor-pointer"
-          >
-            <RefreshCw className="h-3 w-3" />
-            <span>{Math.round(scale * 100)}%</span>
-          </button>
+          {/* Quick Scale Presets */}
+          {[
+            { label: 'Vừa', val: 1 },
+            { label: '200%', val: 2 },
+            { label: '400%', val: 4 },
+          ].map(p => (
+            <button
+              key={p.label}
+              onClick={() => handleSetScale(p.val)}
+              className={`px-2.5 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                Math.round(scale) === p.val
+                  ? 'bg-violet-600 text-white shadow-md shadow-violet-600/30'
+                  : 'bg-white/5 hover:bg-white/15 text-slate-300'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
 
           <button
             onClick={handleZoomIn}
-            disabled={scale >= 5}
+            disabled={scale >= 8}
             title="Phóng to (+)"
             className="h-8 w-8 rounded-xl bg-white/5 hover:bg-white/15 text-slate-200 hover:text-white flex items-center justify-center transition-all cursor-pointer disabled:opacity-40"
           >

@@ -1,12 +1,12 @@
 /**
- * Utility for high-fidelity client-side image compression to WebP.
- * Produces crisp, readable text for mindmaps, screenshots, and diagrams
- * while keeping file sizes extremely light (~120KB - 180KB).
+ * High-Resolution Image Compression Utility.
+ * Prioritizes maximum sharpness & crystal-clear readability for mindmaps,
+ * documents, flowcharts, and code screenshots up to 4K resolution (4096px).
  */
 export async function compressImageToWebP(
   file: File,
-  maxDimension = 2048,
-  quality = 0.85
+  maxDimension = 4096,
+  quality = 0.95
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
@@ -22,7 +22,7 @@ export async function compressImageToWebP(
         let width = img.naturalWidth || img.width
         let height = img.naturalHeight || img.height
 
-        // Downscale proportionally only if dimension exceeds maxDimension (e.g. 2048px)
+        // Downscale proportionally ONLY if dimension exceeds 4K maxDimension (4096px)
         if (width > height) {
           if (width > maxDimension) {
             height = Math.round((height * maxDimension) / width)
@@ -39,21 +39,21 @@ export async function compressImageToWebP(
         canvas.width = width
         canvas.height = height
 
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext('2d', { alpha: true })
         if (!ctx) {
           return reject(new Error('Không thể khởi tạo bộ xử lý Canvas!'))
         }
 
-        // Enable high-quality smoothing for sharp text and clean lines
+        // Enable ultra-high smoothing for razor-sharp text and lines
         ctx.imageSmoothingEnabled = true
         ctx.imageSmoothingQuality = 'high'
 
         ctx.drawImage(img, 0, 0, width, height)
 
-        // Try WebP first for optimal compression & sharpness
+        // Try WebP first with 0.95 high quality (pixel-perfect clarity)
         let dataUrl = canvas.toDataURL('image/webp', quality)
         if (!dataUrl.startsWith('data:image/webp')) {
-          // Fallback to JPEG if WebP is not supported by environment
+          // Fallback to high-quality JPEG if WebP is not supported by environment
           dataUrl = canvas.toDataURL('image/jpeg', quality)
         }
 

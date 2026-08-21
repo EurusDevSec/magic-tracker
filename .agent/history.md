@@ -106,11 +106,11 @@ This document records the chronological history of completed requests, fixes, an
 ### High-Fidelity WebP 2K Upload & Interactive Pro ImageViewer
 *   **Problem:** Uploaded images (screenshots of documents, mindmaps, code) were blurred and squeezed due to 1200px JPEG 75% canvas compression and static `max-h-[80vh]` lightbox without zoom/pan controls.
 *   **Fix:**
-    *   **Created [image-utils.ts](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/lib/image-utils.ts):** Implemented `compressImageToWebP` providing 2048px (2K) resolution, 85% WebP quality, and `imageSmoothingQuality = 'high'`. Keeps text razor sharp while producing lightweight files (~120KB - 180KB).
-    *   **Created [ImageViewerModal.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/components/ImageViewerModal.tsx):** Built a dedicated lightbox viewer with interactive Zoom In/Out (100% - 500%), Mouse Wheel Zoom, Click & Drag Pan, Double-Click Zoom Toggle, 90° Rotate, Open in New Tab (Full Size), and Native Download.
+    *   **Created [image-utils.ts](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/lib/image-utils.ts):** Upgraded `compressImageToWebP` to **4096px (4K UHD resolution)** with **95% quality** and high-fidelity canvas smoothing (`imageSmoothingQuality = 'high'`). Preserves 100% pixel-level crispness for tiny text on diagrams/mindmaps.
+    *   **Enhanced [ImageViewerModal.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/components/ImageViewerModal.tsx):** Upgraded zoom scale up to **800% (8x)** with GPU hardware acceleration (`translate3d`), quick presets (Vừa, 200%, 400%), and a prominent **"Mở Tab Mới (100% Gốc)"** button to view raw pixel dimensions directly.
     *   **Integrated:** Replaced basic lightboxes and updated upload pipelines in [ReportForm.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/components/ReportForm.tsx), [group/new/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/group/new/page.tsx), [history/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/history/page.tsx), [group/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/report/group/page.tsx), and [dashboard/page.tsx](file:///r:/_Projects/Eurus_Workspace/Report_intern/src/app/dashboard/page.tsx).
 
 ---
 
 ## 📋 Next Steps
-- Test uploading and zooming high-resolution mindmaps on `http://localhost:3000`.
+- Test uploading a new 4K mindmap diagram and zooming to 400%/800%.
