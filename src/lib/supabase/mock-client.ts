@@ -336,6 +336,7 @@ class MockQueryBuilder {
   private orderDirection: 'asc' | 'desc' = 'asc';
   private updatePayload: any = null;
   private isUpdate: boolean = false;
+  private isDelete: boolean = false;
 
   constructor(tableName: string) {
     this.tableName = tableName;
@@ -369,6 +370,26 @@ class MockQueryBuilder {
 
   lte(column: string, value: any) {
     this.filters.push((item) => item[column] <= value);
+    return this;
+  }
+
+  in(column: string, values: any[]) {
+    this.filters.push((item) => values.includes(item[column]));
+    return this;
+  }
+
+  like(column: string, pattern: string) {
+    const regexPattern = '^' + pattern.replace(/%/g, '.*').replace(/_/g, '.') + '$';
+    const regex = new RegExp(regexPattern, 'i');
+    this.filters.push((item) => {
+      const val = item[column];
+      return typeof val === 'string' && regex.test(val);
+    });
+    return this;
+  }
+
+  delete() {
+    this.isDelete = true;
     return this;
   }
 
@@ -432,6 +453,11 @@ class MockQueryBuilder {
           }
           return item;
         });
+        this.saveItems(items);
+        result = { data: null, error: null };
+      } else if (this.isDelete) {
+        let items = this.getItems();
+        items = items.filter(item => !this.filters.every(filter => filter(item)));
         this.saveItems(items);
         result = { data: null, error: null };
       } else {

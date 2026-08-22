@@ -97,6 +97,20 @@ CREATE POLICY "Allow users to update their own reports"
     ON public.reports FOR UPDATE 
     USING (auth.uid() = user_id);
 
+CREATE POLICY "Allow users to delete reports"
+    ON public.reports FOR DELETE
+    TO authenticated
+    USING (
+        auth.uid() = user_id OR 
+        (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' OR
+        EXISTS (
+            SELECT 1 FROM public.group_meetings gm
+            WHERE gm.meeting_date = report_date
+            AND gm.created_by = auth.uid()
+            AND user_id = ANY(gm.participants)
+        )
+    );
+
 -- Gratitude Logs Policies
 CREATE POLICY "Allow users to view their own gratitude logs" 
     ON public.gratitude_logs FOR SELECT 
@@ -146,6 +160,11 @@ CREATE POLICY "Allow creators to update their group meetings"
     TO authenticated
     USING (auth.uid() = created_by);
 
+CREATE POLICY "Allow creators or admins to delete group meetings"
+    ON public.group_meetings FOR DELETE
+    TO authenticated
+    USING (auth.uid() = created_by OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+
 -- 6. Bảng Nhật Ký Họp Với Mentor (Boss Meetings)
 CREATE TABLE IF NOT EXISTS public.boss_meetings (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -182,3 +201,25 @@ CREATE POLICY "boss_lessons_select" ON public.boss_lessons FOR SELECT USING (aut
 CREATE POLICY "boss_lessons_insert" ON public.boss_lessons FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY "boss_lessons_update" ON public.boss_lessons FOR UPDATE
   USING (auth.uid() = created_by OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin');
+
+-- 8. Set up Storage Bucket & Policies for Avatars
+-- Note: Run these if you are setting up storage in a new Supabase environment.
+-- Create the avatars bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policy to allow public access to retrieve avatar images
+CREATE POLICY "Allow public read access to avatars"
+    ON storage.objects FOR SELECT
+    USING (bucket_id = 'avatars');
+
+-- Policy to allow authenticated users to upload their own avatar
+CREATE POLICY "Allow authenticated users to upload avatars"
+    ON storage.objects FOR INSERT
+    WITH CHECK (bucket_id = 'avatars' AND auth.role() = 'authenticated');
+
+-- Policy to allow users to update or delete their own avatar
+CREATE POLICY "Allow users to update/delete their own avatars"
+    ON storage.objects FOR UPDATE
+    USING (bucket_id = 'avatars' AND auth.uid() = owner);
