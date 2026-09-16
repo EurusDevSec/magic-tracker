@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Navigation from '@/components/Navigation'
 import UserAvatar from '@/components/UserAvatar'
-import { Loader2, Save, User as UserIcon, Camera, AlertCircle, Check } from 'lucide-react'
+import { Loader2, Save, User as UserIcon, Camera, AlertCircle, Check, Lock, Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react'
 
 // Premium preset gradients for avatar backgrounds
 const PRESET_AVATARS = [
@@ -28,6 +28,56 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
+
+  // Password change state
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPass, setShowNewPass] = useState(false)
+  const [showConfirmPass, setShowConfirmPass] = useState(false)
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    if (!newPassword) {
+      setPasswordError('Vui lòng nhập mật khẩu mới.')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('Mật khẩu mới phải có tối thiểu 6 ký tự.')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại!')
+      return
+    }
+
+    setPasswordSaving(true)
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+
+      if (error) throw error
+
+      setPasswordSuccess('Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới này cho những lần đăng nhập sau.')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => setPasswordSuccess(''), 6000)
+    } catch (err: any) {
+      console.error('Password change error:', err)
+      setPasswordError(err.message || 'Không thể đổi mật khẩu. Vui lòng thử lại sau!')
+    } finally {
+      setPasswordSaving(false)
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -315,6 +365,105 @@ export default function ProfilePage() {
                   </button>
                 </div>
 
+              </form>
+            </div>
+
+            {/* Change Password Card */}
+            <div className="glass-card p-6 md:p-8 rounded-2xl mt-8">
+              <div className="flex items-center gap-3 pb-5 border-b border-white/5 mb-6">
+                <div className="h-10 w-10 rounded-xl bg-violet-600/20 text-violet-400 border border-violet-500/30 flex items-center justify-center">
+                  <KeyRound className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Bảo Mật & Đổi Mật Khẩu</h3>
+                  <p className="text-xs text-slate-400">Cập nhật mật khẩu bảo vệ tài khoản (không cần qua email).</p>
+                </div>
+              </div>
+
+              {passwordError && (
+                <div className="mb-6 rounded-xl bg-rose-500/10 border border-rose-500/20 p-4 text-sm text-rose-400 flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <span>{passwordError}</span>
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div className="mb-6 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-4 text-sm text-emerald-400 flex items-center gap-2 animate-fadeIn">
+                  <Check className="h-5 w-5 shrink-0" />
+                  <span>{passwordSuccess}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleChangePassword} className="space-y-5">
+                <div>
+                  <label htmlFor="newPassword" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                    Mật khẩu mới (Tối thiểu 6 ký tự)
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <input
+                      id="newPassword"
+                      type={showNewPass ? 'text' : 'password'}
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Nhập mật khẩu mới..."
+                      className="glass-input block w-full rounded-xl py-2.5 pl-10 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 transition-colors"
+                    >
+                      {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                    Xác nhận mật khẩu mới
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-500">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPass ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Nhập lại mật khẩu mới..."
+                      className="glass-input block w-full rounded-xl py-2.5 pl-10 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPass(!showConfirmPass)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200 transition-colors"
+                    >
+                      {showConfirmPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-3 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={passwordSaving}
+                    className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition-all cursor-pointer shadow-lg shadow-violet-600/20"
+                  >
+                    {passwordSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Lock className="h-4 w-4" /> Cập nhật mật khẩu
+                      </>
+                    )}
+                  </button>
+                </div>
               </form>
             </div>
           </div>
